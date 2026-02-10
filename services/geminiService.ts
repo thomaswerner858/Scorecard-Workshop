@@ -2,12 +2,15 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ScoringParameter, KOCriterion, ParameterGroup } from "../types";
 
+// Die GoogleGenAI Instanz wird erst beim Aufruf erstellt, um die aktuellste Umgebungsvariable zu nutzen.
+const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY || 'AIzaSyA3t0CU1egkd6Yu4cE6lPYN95vOigguJnA' });
+
 export const getSparringFeedback = async (
   parameters: ScoringParameter[],
   koCriteria: KOCriterion[],
   groups: ParameterGroup[] = []
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY=AIzaSyA3t0CU1egkd6Yu4cE6lPYN95vOigguJnA });
+  const ai = getAIClient();
   const totalGroupWeight = groups.reduce((sum, g) => sum + g.weight, 0);
   
   const configurationSummary = groups.map(g => {
@@ -17,8 +20,8 @@ export const getSparringFeedback = async (
   }).join("\n\n");
 
   const prompt = `
-    Du bist ein erfahrener B2B Risk Manager und Credit Scoring Experte. 
-    Analysiere das vorliegende Scoring-Modell eines Kunden im Onboarding kritisch und konstruktiv.
+    Du bist ein Senior B2B Risk Manager und Credit Scoring Experte. 
+    Analysiere das vorliegende Scoring-Modell kritisch und gib Verbesserungsvorschläge.
     
     KONFIGURATION:
     Gesamtgewichtung der Gruppen: ${totalGroupWeight}%
@@ -30,12 +33,7 @@ export const getSparringFeedback = async (
     ${koCriteria.length > 0 ? koCriteria.map(k => `- ${k.label}: Wenn ${k.parameterName} ${k.operator} ${k.value}`).join("\n") : "Keine definiert"}
 
     AUFGABE:
-    Bewerte die Logik, die Gewichtungen und die Vollständigkeit. 
-    1. Sind die Gewichtungen zwischen Finanzen und Stammdaten ausgewogen?
-    2. Fehlen branchenübliche Faktoren (z.B. Zahlungsverhalten, Marktdaten)?
-    3. Sind die K.O.-Kriterien sinnvoll gewählt?
-    
-    Gib professionelles Feedback auf Deutsch in Markdown-Format (max. 180 Wörter).
+    Bewerte die Logik und Vollständigkeit. Gib Feedback auf Deutsch in Markdown (max. 180 Wörter).
   `;
 
   const response = await ai.models.generateContent({
@@ -43,20 +41,19 @@ export const getSparringFeedback = async (
     contents: prompt,
   });
 
-  return response.text || "Kein Feedback verfügbar.";
+  return response.text || "Feedback derzeit nicht verfügbar.";
 };
 
 export const generateScoringConfig = async (userRequest: string): Promise<{ groups: ParameterGroup[], parameters: ScoringParameter[] }> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY=AIzaSyA3t0CU1egkd6Yu4cE6lPYN95vOigguJnA });
+  const ai = getAIClient();
   
   const prompt = `
-    Du bist ein Senior B2B Risk Manager. Erstelle ein professionelles Scoring-Modell basierend auf: "${userRequest}".
+    Erstelle als Senior B2B Risk Manager ein professionelles Scoring-Modell für: "${userRequest}".
     
     REGELN:
-    1. Erstelle 2-3 logische Gruppen (z.B. Finanzielle Solidität, Operative Risiken). Summe der Gewichte = 100.
-    2. Pro Gruppe 2-3 präzise Parameter. Summe der Gewichte pro Gruppe = 100.
-    3. Nutze 'numeric' für messbare Daten und 'categorical' für qualitative Einschätzungen (Text-Labels).
-    4. Antworte ausschließlich im validen JSON-Format.
+    1. 2-3 logische Gruppen, Summe Gewichte = 100.
+    2. 2-3 Parameter pro Gruppe, Summe Gewichte pro Gruppe = 100.
+    3. JSON-Format mit IDs (g1, g2... p1, p2...) und sinnvollen Score-Ranges.
   `;
 
   const response = await ai.models.generateContent({
@@ -114,11 +111,8 @@ export const generateScoringConfig = async (userRequest: string): Promise<{ grou
   });
 
   try {
-    const text = response.text;
-    if (!text) throw new Error("KI lieferte keine Daten.");
-    return JSON.parse(text);
+    return JSON.parse(response.text || "{}");
   } catch (e) {
-    console.error("JSON Parse Error:", e);
-    throw new Error("Struktur konnte nicht generiert werden.");
+    throw new Error("Fehler beim Parsen der KI-Antwort.");
   }
 };

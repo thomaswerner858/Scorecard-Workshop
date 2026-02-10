@@ -56,7 +56,7 @@ const App: React.FC = () => {
       const feedback = await getSparringFeedback(parameters, koCriteria, groups);
       setAiFeedback(feedback);
     } catch (err) {
-      setError("KI-Feedback konnte nicht geladen werden. Prüfen Sie Ihren API-Key.");
+      setError("Verbindungsfehler zur KI. Bitte prüfen Sie den API_KEY in Ihrer Umgebung.");
     } finally {
       setLoadingAi(false);
     }
@@ -70,10 +70,10 @@ const App: React.FC = () => {
       const config = await generateScoringConfig(generationPrompt);
       setGroups(config.groups);
       setParameters(config.parameters);
-      setAiFeedback("✨ KI hat ein neues Modell generiert! Bitte prüfen Sie die Details.");
+      setAiFeedback("✨ KI-Modell wurde erfolgreich generiert. Sie können es jetzt unten anpassen.");
       setGenerationPrompt('');
     } catch (err) {
-      setError("Generierung fehlgeschlagen. Ist ein gültiger API_KEY hinterlegt?");
+      setError("KI-Generierung fehlgeschlagen. Prüfen Sie Ihren API-Key.");
     } finally {
       setGeneratingConfig(false);
     }
@@ -81,7 +81,7 @@ const App: React.FC = () => {
 
   const exportConfiguration = () => {
     const config = {
-      version: "1.1",
+      version: "1.2",
       timestamp: new Date().toISOString(),
       groups,
       parameters,
@@ -91,94 +91,97 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `bilendo-scoring-config-${new Date().getTime()}.json`;
+    a.download = `bilendo-scoring-studio-${new Date().getTime()}.json`;
     a.click();
     setShowExportToast(true);
     setTimeout(() => setShowExportToast(false), 3000);
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-slate-50 font-sans">
+    <div className="min-h-screen pb-20 bg-slate-50 font-sans text-slate-900">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 flex items-center justify-center overflow-hidden">
+              <div className="w-10 h-10 flex items-center justify-center bg-indigo-600 rounded-xl overflow-hidden shadow-lg shadow-indigo-200">
                 <img 
                   src="/logo.png" 
-                  alt="Bilendo Logo"
-                  className="w-full h-full object-contain"
+                  alt="Bilendo"
+                  className="w-8 h-8 object-contain brightness-0 invert"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = 'https://ui-avatars.com/api/?name=Bilendo&background=4F46E5&color=fff';
+                    target.style.display = 'none';
+                    target.parentElement!.innerHTML = '<span class="text-white font-black text-xl">B</span>';
                   }}
                 />
               </div>
-              <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none">
+              <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">
                 Bilendo <span className="text-indigo-600">ScoringStudio</span>
               </h1>
             </div>
           </div>
           <div className="flex items-center gap-4">
-             <div className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all duration-500 ${totalGroupWeight === 100 ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-amber-50 text-amber-700 border border-amber-100'}`}>
-                <LayoutDashboardIcon size={14} />
-                Global: {totalGroupWeight}%
+             <div className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-500 ${totalGroupWeight === 100 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                {totalGroupWeight === 100 ? <CheckCircle2Icon size={14} /> : <AlertTriangleIcon size={14} />}
+                Status: {totalGroupWeight}%
              </div>
              <button 
                 onClick={exportConfiguration}
-                className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition shadow-md active:scale-95"
+                className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-xs font-black hover:bg-slate-800 transition shadow-xl active:scale-95 flex items-center gap-2"
              >
                <DownloadIcon size={16} />
-               Exportieren
+               Konfiguration Exportieren
              </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
         
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-            <AlertTriangleIcon size={20} />
-            <span className="text-sm font-bold">{error}</span>
+          <div className="mb-8 bg-red-50 border-l-4 border-red-500 text-red-700 p-5 rounded-r-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
+            <div className="bg-red-100 p-2 rounded-full"><AlertTriangleIcon size={20} /></div>
+            <div>
+              <p className="font-black text-sm uppercase tracking-tight">System-Fehler</p>
+              <p className="text-xs opacity-80">{error}</p>
+            </div>
           </div>
         )}
 
-        {/* AI Magic Generator Section */}
-        <div className="mb-12">
-          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-indigo-100/30 relative overflow-hidden group">
-            <div className="relative z-10 flex flex-col md:flex-row gap-4 items-center">
-              <div className="bg-indigo-50 p-4 rounded-3xl shrink-0">
-                <Wand2Icon className="text-indigo-600" size={32} />
+        {/* AI Magic Creation */}
+        <div className="mb-14">
+          <div className="bg-white p-2 rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-indigo-100/40">
+            <div className="bg-slate-50 p-6 rounded-[2rem] flex flex-col md:flex-row gap-5 items-center">
+              <div className="bg-indigo-600 p-4 rounded-2xl shadow-lg shadow-indigo-200">
+                <Wand2Icon className="text-white" size={28} />
               </div>
               <div className="flex-1 w-full">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">KI-Konfigurator (Magic Create)</h3>
+                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-2">Automatisierte Erstellung</p>
                 <input 
                   type="text" 
                   value={generationPrompt}
                   onChange={(e) => setGenerationPrompt(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAiGeneration()}
-                  placeholder="Beschreibe dein Ziel (z.B. 'Scoring für Transportunternehmen mit Fokus auf ESG')..."
-                  className="w-full bg-slate-50 border-none focus:ring-2 focus:ring-indigo-500/20 rounded-2xl py-3 px-5 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition-all"
+                  placeholder="Beschreiben Sie Ihre Zielgruppe (z.B. 'Logistik-KMUs mit Fokus auf Liquiditätsreserven')..."
+                  className="w-full bg-white border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 rounded-xl py-3.5 px-5 text-sm font-medium outline-none transition-all"
                 />
               </div>
               <button 
                 onClick={handleAiGeneration}
                 disabled={generatingConfig || !generationPrompt.trim()}
-                className="w-full md:w-auto bg-indigo-600 text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
+                className="w-full md:w-auto bg-indigo-600 text-white px-10 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-50 transition shadow-xl active:scale-95 flex items-center justify-center gap-3"
               >
                 {generatingConfig ? <Loader2Icon className="animate-spin" size={18} /> : <SparklesIcon size={18} />}
-                Modell generieren
+                Modell Erstellen
               </button>
             </div>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/30 rounded-full blur-3xl -mr-32 -mt-32"></div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           
-          <div className="lg:col-span-2 space-y-12">
+          <div className="lg:col-span-2 space-y-16">
             <ParameterEditor 
               groups={groups} 
               parameters={parameters} 
@@ -188,70 +191,73 @@ const App: React.FC = () => {
             
             <KOCriteriaEditor criteria={koCriteria} onUpdate={setKOCriteria} />
 
-            {/* Strategic Analysis & Matrix Summary Section */}
-            <div className="space-y-6">
-               {/* Strategisches Sparring Box */}
-               <div className="bg-gradient-to-br from-indigo-800 to-slate-900 rounded-[2.5rem] p-8 border border-indigo-500/30 shadow-2xl relative overflow-hidden group">
+            {/* Strategic Analysis Section */}
+            <div className="space-y-8">
+               <div className="bg-slate-900 rounded-[3rem] p-10 border border-slate-800 shadow-2xl relative overflow-hidden">
                 <div className="relative z-10">
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-white/10 p-2 rounded-xl backdrop-blur-md border border-white/20">
-                        <SparklesIcon className="text-white" size={24} />
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-indigo-500 p-3 rounded-2xl">
+                        <SparklesIcon className="text-white" size={28} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-white text-lg leading-tight">Strategisches Sparring</h3>
-                        <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest">KI-Logik-Analyse</p>
+                        <h3 className="font-black text-white text-xl tracking-tight">Strategisches Sparring</h3>
+                        <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest">KI Risk Manager Analyse</p>
                       </div>
                     </div>
                     <button 
                       onClick={triggerAiFeedback}
                       disabled={loadingAi}
-                      className="bg-white text-indigo-950 px-6 py-2.5 rounded-xl text-xs font-black hover:bg-indigo-50 disabled:opacity-50 transition shadow-lg active:scale-95"
+                      className="bg-white text-slate-900 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-50 transition shadow-xl active:scale-95 disabled:opacity-50"
                     >
-                      {loadingAi ? 'Experte analysiert...' : 'Struktur prüfen'}
+                      {loadingAi ? 'Experte prüft...' : 'Modell Validieren'}
                     </button>
                   </div>
                   
                   {aiFeedback ? (
-                    <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 text-indigo-50 text-sm leading-relaxed whitespace-pre-line animate-in fade-in slide-in-from-top-2 duration-500 max-h-[400px] overflow-y-auto custom-scrollbar">
+                    <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 border border-white/5 text-slate-300 text-sm leading-relaxed whitespace-pre-line animate-in fade-in zoom-in duration-500 max-h-[500px] overflow-y-auto custom-scrollbar">
                       {aiFeedback}
                     </div>
                   ) : (
-                    <p className="text-indigo-200/60 text-sm italic">
-                      Klicken Sie auf "Struktur prüfen", um Feedback von der Bilendo KI zu Ihrem aktuellen Modell zu erhalten.
-                    </p>
+                    <div className="text-center py-10">
+                      <p className="text-slate-500 text-sm italic max-w-sm mx-auto">
+                        Lassen Sie Ihr Modell von unserem KI-Risk-Manager auf Plausibilität und branchenspezifische Risiken prüfen.
+                      </p>
+                    </div>
                   )}
                 </div>
-                <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl"></div>
+                {/* Decoration */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] -mr-48 -mt-48"></div>
               </div>
 
-              {/* Scorecard Matrix Overview */}
-              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <FileTextIcon size={24} className="text-indigo-500" />
-                    Scorecard Matrix Übersicht
-                  </h2>
+              {/* Matrix Table Overview */}
+              <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-10">
+                  <div className="bg-slate-100 p-2 rounded-lg"><FileTextIcon size={20} className="text-slate-600" /></div>
+                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Übersicht Scorecard Matrix</h2>
                 </div>
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {groups.map(group => (
-                    <div key={group.id} className="border border-slate-100 rounded-3xl p-6 bg-slate-50/50">
-                      <div className="flex justify-between items-center mb-5 border-b border-slate-200/50 pb-3">
-                        <h4 className="font-bold text-slate-800 text-sm">{group.name}</h4>
-                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">{group.weight}% Global</span>
+                    <div key={group.id} className="group/row">
+                      <div className="flex justify-between items-end mb-4 px-2">
+                        <h4 className="font-black text-slate-800 text-xs uppercase tracking-widest">{group.name}</h4>
+                        <div className="flex flex-col items-end">
+                           <span className="text-[10px] font-bold text-slate-400 uppercase">Globale Gewichtung</span>
+                           <span className="text-lg font-black text-indigo-600">{group.weight}%</span>
+                        </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {parameters.filter(p => p.groupId === group.id).map(p => (
-                          <div key={p.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="font-bold text-slate-700 text-xs truncate max-w-[150px]">{p.name}</span>
-                              <span className="text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded">{p.weight}%</span>
+                          <div key={p.id} className="bg-slate-50 p-5 rounded-2xl border border-slate-100 hover:border-indigo-200 transition-colors">
+                            <div className="flex items-center justify-between mb-4">
+                              <span className="font-bold text-slate-700 text-xs">{p.name}</span>
+                              <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-md font-black text-slate-400">{p.weight}%</span>
                             </div>
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-2">
                               {p.ranges.map(r => (
-                                <div key={r.id} className="text-[9px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded border border-slate-100 flex gap-1">
-                                  <span className="font-medium">{p.type === 'numeric' ? `${r.min}-${r.max}` : r.label}:</span>
-                                  <span className="font-bold text-indigo-600">{r.points}P</span>
+                                <div key={r.id} className="text-[10px] bg-white border border-slate-100 px-2 py-1 rounded-lg flex items-center gap-2">
+                                  <span className="text-slate-400">{p.type === 'numeric' ? `${r.min}-${r.max}` : r.label}</span>
+                                  <span className="font-black text-indigo-600">{r.points}P</span>
                                 </div>
                               ))}
                             </div>
@@ -272,11 +278,13 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Export Success Message */}
+      {/* Export Toast */}
       {showExportToast && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-10 duration-500 z-[100]">
-          <CheckCircle2Icon className="text-green-400" size={24} />
-          <span className="font-bold text-sm">Konfiguration erfolgreich exportiert!</span>
+        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-10 py-5 rounded-3xl shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-12 duration-500 z-[100]">
+          <div className="bg-green-500 p-2 rounded-full shadow-lg shadow-green-500/20">
+            <CheckCircle2Icon className="text-white" size={20} />
+          </div>
+          <span className="font-black text-xs uppercase tracking-widest">Konfiguration Exportiert</span>
         </div>
       )}
     </div>

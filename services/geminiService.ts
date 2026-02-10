@@ -7,7 +7,7 @@ export const getSparringFeedback = async (
   koCriteria: KOCriterion[],
   groups: ParameterGroup[] = []
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY=AIzaSyA3t0CU1egkd6Yu4cE6lPYN95vOigguJnA });
   const totalGroupWeight = groups.reduce((sum, g) => sum + g.weight, 0);
   
   const configurationSummary = groups.map(g => {
@@ -17,19 +17,25 @@ export const getSparringFeedback = async (
   }).join("\n\n");
 
   const prompt = `
-    Du bist ein erfahrener B2B Risk Manager. Analysiere das Scoring-Modell:
+    Du bist ein erfahrener B2B Risk Manager und Credit Scoring Experte. 
+    Analysiere das vorliegende Scoring-Modell eines Kunden im Onboarding kritisch und konstruktiv.
     
     KONFIGURATION:
     Gesamtgewichtung der Gruppen: ${totalGroupWeight}%
+    
+    STRUKTUR:
     ${configurationSummary}
 
     K.O. KRITERIEN:
-    ${koCriteria.length > 0 ? koCriteria.map(k => `- ${k.label}`).join("\n") : "Keine definiert"}
+    ${koCriteria.length > 0 ? koCriteria.map(k => `- ${k.label}: Wenn ${k.parameterName} ${k.operator} ${k.value}`).join("\n") : "Keine definiert"}
 
     AUFGABE:
-    Gib kurzes, professionelles Feedback (max 150 Wörter) zur Logik und Vollständigkeit. 
-    Achte besonders darauf, ob die Gewichtungen sinnvoll verteilt sind.
-    Nutze Deutsch und Markdown.
+    Bewerte die Logik, die Gewichtungen und die Vollständigkeit. 
+    1. Sind die Gewichtungen zwischen Finanzen und Stammdaten ausgewogen?
+    2. Fehlen branchenübliche Faktoren (z.B. Zahlungsverhalten, Marktdaten)?
+    3. Sind die K.O.-Kriterien sinnvoll gewählt?
+    
+    Gib professionelles Feedback auf Deutsch in Markdown-Format (max. 180 Wörter).
   `;
 
   const response = await ai.models.generateContent({
@@ -41,21 +47,20 @@ export const getSparringFeedback = async (
 };
 
 export const generateScoringConfig = async (userRequest: string): Promise<{ groups: ParameterGroup[], parameters: ScoringParameter[] }> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY=AIzaSyA3t0CU1egkd6Yu4cE6lPYN95vOigguJnA });
   
   const prompt = `
-    Erstelle ein vollständiges B2B Scoring-Modell für folgende Anforderung: "${userRequest}".
+    Du bist ein Senior B2B Risk Manager. Erstelle ein professionelles Scoring-Modell basierend auf: "${userRequest}".
     
-    WICHTIGE REGELN:
-    1. Erstelle 2-4 Gruppen. Die Summe der 'weight' Felder der Gruppen MUSS genau 100 sein.
-    2. Jede Gruppe hat mehrere Parameter. Innerhalb jeder Gruppe MUSS die Summe der 'weight' Felder der Parameter genau 100 sein.
-    3. Nutze 'numeric' für Zahlenwerte und 'categorical' für qualitative Optionen (Text).
-    4. IDs müssen eindeutig sein (z.B. g1, g2 für Gruppen; p1, p2 für Parameter).
-    5. Jede Range benötigt ein 'points' Feld (0-100).
+    REGELN:
+    1. Erstelle 2-3 logische Gruppen (z.B. Finanzielle Solidität, Operative Risiken). Summe der Gewichte = 100.
+    2. Pro Gruppe 2-3 präzise Parameter. Summe der Gewichte pro Gruppe = 100.
+    3. Nutze 'numeric' für messbare Daten und 'categorical' für qualitative Einschätzungen (Text-Labels).
+    4. Antworte ausschließlich im validen JSON-Format.
   `;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -110,10 +115,10 @@ export const generateScoringConfig = async (userRequest: string): Promise<{ grou
 
   try {
     const text = response.text;
-    if (!text) throw new Error("Leere Antwort von der KI");
+    if (!text) throw new Error("KI lieferte keine Daten.");
     return JSON.parse(text);
   } catch (e) {
-    console.error("Parse Error:", e);
-    throw new Error("Das Modell konnte nicht korrekt generiert werden.");
+    console.error("JSON Parse Error:", e);
+    throw new Error("Struktur konnte nicht generiert werden.");
   }
 };

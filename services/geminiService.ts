@@ -2,8 +2,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ScoringParameter, KOCriterion, ParameterGroup } from "../types";
 
-// Die GoogleGenAI Instanz wird erst beim Aufruf erstellt, um die aktuellste Umgebungsvariable zu nutzen.
-const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY || 'AIzaSyA3t0CU1egkd6Yu4cE6lPYN95vOigguJnA' });
+const getAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("API_KEY environment variable is missing.");
+  }
+  return new GoogleGenAI({ apiKey: apiKey || 'AIzaSyA3t0CU1egkd6Yu4cE6lPYN95vOigguJnA' });
+};
 
 export const getSparringFeedback = async (
   parameters: ScoringParameter[],
@@ -36,30 +41,26 @@ export const getSparringFeedback = async (
     Bewerte die Logik und Vollständigkeit. Gib Feedback auf Deutsch in Markdown (max. 180 Wörter).
   `;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-  });
-
-  return response.text || "Feedback derzeit nicht verfügbar.";
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+    });
+    return response.text || "Feedback derzeit nicht verfügbar.";
+  } catch (error) {
+    console.error("Sparring Error:", error);
+    throw error;
+  }
 };
 
 export const generateScoringConfig = async (userRequest: string): Promise<{ groups: ParameterGroup[], parameters: ScoringParameter[] }> => {
   const ai = getAIClient();
   
-  const prompt = `
-    Erstelle als Senior B2B Risk Manager ein professionelles Scoring-Modell für: "${userRequest}".
-    
-    REGELN:
-    1. 2-3 logische Gruppen, Summe Gewichte = 100.
-    2. 2-3 Parameter pro Gruppe, Summe Gewichte pro Gruppe = 100.
-    3. JSON-Format mit IDs (g1, g2... p1, p2...) und sinnvollen Score-Ranges.
-  `;
-
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: prompt,
+    contents: `Erstelle ein B2B-Scoring-Modell für dieses Szenario: "${userRequest}"`,
     config: {
+      systemInstruction: "Du bist ein Senior B2B Risk Manager. Erstelle eine professionelle Scoring-Logik. Achte darauf, dass Gruppen-Gewichte in Summe 100 ergeben und Parameter-Gewichte innerhalb einer Gruppe ebenfalls 100 ergeben. IDs müssen g1, g2, p1, p2 etc. sein.",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -111,8 +112,11 @@ export const generateScoringConfig = async (userRequest: string): Promise<{ grou
   });
 
   try {
-    return JSON.parse(response.text || "{}");
+    const text = response.text;
+    if (!text) throw new Error("Keine Antwort von der KI erhalten.");
+    return JSON.parse(text);
   } catch (e) {
-    throw new Error("Fehler beim Parsen der KI-Antwort.");
+    console.error("Parsing Error in generateScoringConfig:", e);
+    throw new Error("Das generierte Modell konnte nicht verarbeitet werden.");
   }
 };

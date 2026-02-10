@@ -1,20 +1,48 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
 
-# Run and deploy your AI Studio app
+# 🚀 ScoringStudio B2B - Onboarding Configurator
 
-This contains everything you need to run your app locally.
+Ein interaktiver B2B-Scoring-Konfigurator, der Unternehmen dabei unterstützt, komplexe Risiko- und Bonitätslogiken visuell zu definieren, per KI zu validieren und als JSON zu exportieren.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1pvFf2O7GOIrWTLB5CVjcPNBHvPu1n01E
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![React](https://img.shields.io/badge/React-19-61dafb.svg)
+![Gemini AI](https://img.shields.io/badge/AI-Gemini%20Flash-orange.svg)
 
-## Run Locally
+## ✨ Features
 
-**Prerequisites:**  Node.js
+- **Hierarchisches Scoring**: Gruppierung von Parametern (z.B. Finanzen, Stammdaten) mit globaler Gewichtung.
+- **Duales Parameter-System**: Unterstützung für numerische Werte (Ranges) und kategoriale Texte (Drop-Downs).
+- **Dynamic Weight Redistribution**: Intelligente Logik, die den Score automatisch auf 100% skaliert, auch wenn Datenfelder im Test leer bleiben.
+- **K.O. Kriterien**: Definition von harten Ausschlusskriterien (Hard-Rejects).
+- **KI-Sparringspartner**: Integrierte Gemini-KI, die das Scoring-Modell auf logische Konsistenz und Branchenstandards prüft.
+- **JSON Export**: Export der Konfiguration für die direkte Integration in Backend-Systeme.
 
+## 🛠 Setup & Installation
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Dieses Projekt basiert auf modernem React und Tailwind CSS. Es nutzt ESM-Imports direkt über esm.sh.
+
+### Lokal ausführen
+Da es sich um eine statische ESM-App handelt, reicht ein einfacher lokaler Webserver:
+
+1. Repository klonen: `git clone https://github.com/DEIN-USER/scoring-studio-b2b.git`
+2. In das Verzeichnis wechseln.
+3. Einen Server starten (z.B. mit VS Code Live Server oder `npx serve .`).
+
+### API Key Konfiguration
+Die App benötigt einen Google Gemini API Key in der Umgebungsvariable `API_KEY`.
+
+- **Lokal**: Stelle sicher, dass dein Entwicklungsserver die Variable `process.env.API_KEY` bereitstellt.
+- **GitHub Actions / Deployment**: 
+  1. Gehe in deinem GitHub Repo zu `Settings` > `Secrets and variables` > `Actions`.
+  2. Erstelle ein neues Secret mit dem Namen `API_KEY` und füge deinen Schlüssel ein.
+
+## 📂 Dateistruktur
+
+- `App.tsx`: Hauptanwendung & State-Management.
+- `components/ParameterEditor.tsx`: Visueller Editor für Gruppen und Parameter.
+- `components/LiveTester.tsx`: Echtzeit-Validierungstool für die Scoring-Logik.
+- `services/geminiService.ts`: Integration der Google GenAI SDK.
+- `types.ts`: TypeScript Definitionen der Scoring-Engine.
+
+## 📄 Lizenz
+
+Dieses Projekt ist unter der MIT-Lizenz lizenziert.

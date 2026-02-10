@@ -2,7 +2,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { ScoringParameter, KOCriterion, ParameterGroup } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'AIzaSyA3t0CU1egkd6Yu4cE6lPYN95vOigguJnA' });
 
 export const getSparringFeedback = async (
   parameters: ScoringParameter[],

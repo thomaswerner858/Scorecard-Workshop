@@ -1,0 +1,5 @@
+{
+  "name": "B2B-Scoring-Konfigurator",
+  "description": "Ein interaktiver B2B-Scoring-Konfigurator zur Definition und Validierung individueller Scoring-Logiken mit KI-Sparringspartner.",
+  "requestFramePermissions": []
+}

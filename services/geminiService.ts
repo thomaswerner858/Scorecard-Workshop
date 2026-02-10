@@ -20,13 +20,16 @@ export const getSparringFeedback = async (
     Du bist ein erfahrener B2B Risk Manager. Analysiere das Scoring-Modell:
     
     KONFIGURATION:
-    Gesamtgewichtung: ${totalGroupWeight}%
+    Gesamtgewichtung der Gruppen: ${totalGroupWeight}%
     ${configurationSummary}
 
     K.O. KRITERIEN:
-    ${koCriteria.length > 0 ? koCriteria.map(k => `- ${k.label}`).join("\n") : "Keine"}
+    ${koCriteria.length > 0 ? koCriteria.map(k => `- ${k.label}`).join("\n") : "Keine definiert"}
 
-    Gib kurzes, professionelles Feedback (max 150 Wörter) zur Logik und Vollständigkeit. Nutze Deutsch und Markdown.
+    AUFGABE:
+    Gib kurzes, professionelles Feedback (max 150 Wörter) zur Logik und Vollständigkeit. 
+    Achte besonders darauf, ob die Gewichtungen sinnvoll verteilt sind.
+    Nutze Deutsch und Markdown.
   `;
 
   const response = await ai.models.generateContent({
@@ -41,12 +44,14 @@ export const generateScoringConfig = async (userRequest: string): Promise<{ grou
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const prompt = `
-    Erstelle ein B2B Scoring-Modell für: "${userRequest}".
-    Regeln:
-    1. 2-3 Gruppen, Summe Gewichte = 100.
-    2. Pro Gruppe 2-3 Parameter, Summe Gewichte pro Gruppe = 100.
-    3. IDs: g1, g2... für Gruppen, p1, p2... für Parameter.
-    4. Nutze 'numeric' für Zahlen und 'categorical' für Text-Optionen.
+    Erstelle ein vollständiges B2B Scoring-Modell für folgende Anforderung: "${userRequest}".
+    
+    WICHTIGE REGELN:
+    1. Erstelle 2-4 Gruppen. Die Summe der 'weight' Felder der Gruppen MUSS genau 100 sein.
+    2. Jede Gruppe hat mehrere Parameter. Innerhalb jeder Gruppe MUSS die Summe der 'weight' Felder der Parameter genau 100 sein.
+    3. Nutze 'numeric' für Zahlenwerte und 'categorical' für qualitative Optionen (Text).
+    4. IDs müssen eindeutig sein (z.B. g1, g2 für Gruppen; p1, p2 für Parameter).
+    5. Jede Range benötigt ein 'points' Feld (0-100).
   `;
 
   const response = await ai.models.generateContent({
@@ -105,9 +110,10 @@ export const generateScoringConfig = async (userRequest: string): Promise<{ grou
 
   try {
     const text = response.text;
-    if (!text) throw new Error("Leere Antwort");
+    if (!text) throw new Error("Leere Antwort von der KI");
     return JSON.parse(text);
   } catch (e) {
-    throw new Error("Parsing Fehler");
+    console.error("Parse Error:", e);
+    throw new Error("Das Modell konnte nicht korrekt generiert werden.");
   }
 };

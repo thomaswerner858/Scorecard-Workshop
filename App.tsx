@@ -45,18 +45,18 @@ const App: React.FC = () => {
   const [generatingConfig, setGeneratingConfig] = useState(false);
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [showExportToast, setShowExportToast] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const totalGroupWeight = groups.reduce((sum, g) => sum + g.weight, 0);
 
   const triggerAiFeedback = async () => {
     setLoadingAi(true);
-    setApiError(null);
+    setError(null);
     try {
       const feedback = await getSparringFeedback(parameters, koCriteria, groups);
       setAiFeedback(feedback);
     } catch (err) {
-      setApiError("Feedback-Fehler: Bitte API-Key prüfen.");
+      setError("KI-Feedback konnte nicht geladen werden. Prüfen Sie Ihren API-Key.");
     } finally {
       setLoadingAi(false);
     }
@@ -65,15 +65,15 @@ const App: React.FC = () => {
   const handleAiGeneration = async () => {
     if (!generationPrompt.trim()) return;
     setGeneratingConfig(true);
-    setApiError(null);
+    setError(null);
     try {
       const config = await generateScoringConfig(generationPrompt);
       setGroups(config.groups);
       setParameters(config.parameters);
-      setAiFeedback("✨ KI hat ein neues Modell erstellt. Bitte prüfen!");
+      setAiFeedback("✨ KI hat ein neues Modell generiert! Bitte prüfen Sie die Details.");
       setGenerationPrompt('');
-    } catch (error) {
-      setApiError("KI-Fehler: Modell konnte nicht generiert werden.");
+    } catch (err) {
+      setError("Generierung fehlgeschlagen. Ist ein gültiger API_KEY hinterlegt?");
     } finally {
       setGeneratingConfig(false);
     }
@@ -81,7 +81,7 @@ const App: React.FC = () => {
 
   const exportConfiguration = () => {
     const config = {
-      version: "1.0",
+      version: "1.1",
       timestamp: new Date().toISOString(),
       groups,
       parameters,
@@ -91,7 +91,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `bilendo-scoring-${new Date().getTime()}.json`;
+    a.download = `bilendo-scoring-config-${new Date().getTime()}.json`;
     a.click();
     setShowExportToast(true);
     setTimeout(() => setShowExportToast(false), 3000);
@@ -138,108 +138,120 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         
-        {apiError && (
+        {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
             <AlertTriangleIcon size={20} />
-            <span className="font-bold text-sm">{apiError}</span>
+            <span className="text-sm font-bold">{error}</span>
           </div>
         )}
 
-        {/* AI Magic Field */}
+        {/* AI Magic Generator Section */}
         <div className="mb-12">
-          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-indigo-100/30 relative overflow-hidden group">
             <div className="relative z-10 flex flex-col md:flex-row gap-4 items-center">
-              <div className="bg-indigo-50 p-3 rounded-2xl shrink-0">
-                <Wand2Icon className="text-indigo-600" size={28} />
+              <div className="bg-indigo-50 p-4 rounded-3xl shrink-0">
+                <Wand2Icon className="text-indigo-600" size={32} />
               </div>
               <div className="flex-1 w-full">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">KI-Modell-Generator</h3>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">KI-Konfigurator (Magic Create)</h3>
                 <input 
                   type="text" 
                   value={generationPrompt}
                   onChange={(e) => setGenerationPrompt(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAiGeneration()}
-                  placeholder="z.B. 'Ein Modell für Industrieunternehmen mit Fokus auf ESG und Liquidität'..."
-                  className="w-full bg-slate-50 border-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl py-3 px-4 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition-all"
+                  placeholder="Beschreibe dein Ziel (z.B. 'Scoring für Transportunternehmen mit Fokus auf ESG')..."
+                  className="w-full bg-slate-50 border-none focus:ring-2 focus:ring-indigo-500/20 rounded-2xl py-3 px-5 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition-all"
                 />
               </div>
               <button 
                 onClick={handleAiGeneration}
                 disabled={generatingConfig || !generationPrompt.trim()}
-                className="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
+                className="w-full md:w-auto bg-indigo-600 text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
               >
                 {generatingConfig ? <Loader2Icon className="animate-spin" size={18} /> : <SparklesIcon size={18} />}
-                Erstellen
+                Modell generieren
               </button>
             </div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/30 rounded-full blur-3xl -mr-32 -mt-32"></div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          
           <div className="lg:col-span-2 space-y-12">
-            <ParameterEditor groups={groups} parameters={parameters} onGroupsUpdate={setGroups} onParamsUpdate={setParameters} />
+            <ParameterEditor 
+              groups={groups} 
+              parameters={parameters} 
+              onGroupsUpdate={setGroups} 
+              onParamsUpdate={setParameters} 
+            />
+            
             <KOCriteriaEditor criteria={koCriteria} onUpdate={setKOCriteria} />
 
-            {/* Sparring & Matrix Section */}
+            {/* Strategic Analysis & Matrix Summary Section */}
             <div className="space-y-6">
-              {/* Strategisches Sparring Block */}
-              <div className="bg-gradient-to-br from-indigo-800 to-indigo-950 rounded-[2.5rem] p-8 border border-indigo-700 shadow-2xl relative overflow-hidden group">
+               {/* Strategisches Sparring Box */}
+               <div className="bg-gradient-to-br from-indigo-800 to-slate-900 rounded-[2.5rem] p-8 border border-indigo-500/30 shadow-2xl relative overflow-hidden group">
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center gap-3">
-                      <div className="bg-white/10 p-2 rounded-lg backdrop-blur-md">
+                      <div className="bg-white/10 p-2 rounded-xl backdrop-blur-md border border-white/20">
                         <SparklesIcon className="text-white" size={24} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-white text-lg">Strategisches Sparring</h3>
-                        <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest">KI-Logik-Check</p>
+                        <h3 className="font-bold text-white text-lg leading-tight">Strategisches Sparring</h3>
+                        <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest">KI-Logik-Analyse</p>
                       </div>
                     </div>
                     <button 
                       onClick={triggerAiFeedback}
                       disabled={loadingAi}
-                      className="bg-white text-indigo-900 px-6 py-2.5 rounded-xl text-xs font-black hover:bg-indigo-50 transition shadow-lg active:scale-95 disabled:opacity-50"
+                      className="bg-white text-indigo-950 px-6 py-2.5 rounded-xl text-xs font-black hover:bg-indigo-50 disabled:opacity-50 transition shadow-lg active:scale-95"
                     >
-                      {loadingAi ? 'Analyse läuft...' : 'Modell validieren'}
+                      {loadingAi ? 'Experte analysiert...' : 'Struktur prüfen'}
                     </button>
                   </div>
+                  
                   {aiFeedback ? (
-                    <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 text-indigo-50 text-sm leading-relaxed whitespace-pre-line animate-in fade-in slide-in-from-top-2 max-h-[400px] overflow-y-auto custom-scrollbar">
+                    <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 text-indigo-50 text-sm leading-relaxed whitespace-pre-line animate-in fade-in slide-in-from-top-2 duration-500 max-h-[400px] overflow-y-auto custom-scrollbar">
                       {aiFeedback}
                     </div>
                   ) : (
                     <p className="text-indigo-200/60 text-sm italic">
-                      Lassen Sie Ihr Modell von der Bilendo KI auf Branchenstandards und logische Konsistenz prüfen.
+                      Klicken Sie auf "Struktur prüfen", um Feedback von der Bilendo KI zu Ihrem aktuellen Modell zu erhalten.
                     </p>
                   )}
                 </div>
-                <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition duration-1000"></div>
+                <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl"></div>
               </div>
 
-              {/* Matrix Übersicht */}
+              {/* Scorecard Matrix Overview */}
               <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-8">
-                  <FileTextIcon size={24} className="text-slate-400" />
-                  Scorecard Matrix Übersicht
-                </h2>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <FileTextIcon size={24} className="text-indigo-500" />
+                    Scorecard Matrix Übersicht
+                  </h2>
+                </div>
                 <div className="space-y-6">
                   {groups.map(group => (
-                    <div key={group.id} className="border border-slate-100 rounded-2xl p-6 bg-slate-50/50">
-                      <div className="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
-                        <h4 className="font-bold text-slate-800">{group.name}</h4>
-                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black">{group.weight}% Global</span>
+                    <div key={group.id} className="border border-slate-100 rounded-3xl p-6 bg-slate-50/50">
+                      <div className="flex justify-between items-center mb-5 border-b border-slate-200/50 pb-3">
+                        <h4 className="font-bold text-slate-800 text-sm">{group.name}</h4>
+                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">{group.weight}% Global</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {parameters.filter(p => p.groupId === group.id).map(p => (
-                          <div key={p.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-bold text-slate-700 text-xs">{p.name}</span>
-                              <span className="text-[10px] text-slate-400 font-bold">{p.weight}%</span>
+                          <div key={p.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="font-bold text-slate-700 text-xs truncate max-w-[150px]">{p.name}</span>
+                              <span className="text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded">{p.weight}%</span>
                             </div>
-                            <div className="flex flex-wrap gap-1.5 mt-2">
+                            <div className="flex flex-wrap gap-1.5">
                               {p.ranges.map(r => (
-                                <div key={r.id} className="text-[9px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded border border-slate-100">
-                                  {p.type === 'numeric' ? `${r.min}-${r.max}` : r.label}: <span className="font-bold text-indigo-600">{r.points}P</span>
+                                <div key={r.id} className="text-[9px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded border border-slate-100 flex gap-1">
+                                  <span className="font-medium">{p.type === 'numeric' ? `${r.min}-${r.max}` : r.label}:</span>
+                                  <span className="font-bold text-indigo-600">{r.points}P</span>
                                 </div>
                               ))}
                             </div>
@@ -256,13 +268,15 @@ const App: React.FC = () => {
           <div className="relative">
             <LiveTester groups={groups} parameters={parameters} koCriteria={koCriteria} />
           </div>
+
         </div>
       </main>
 
+      {/* Export Success Message */}
       {showExportToast && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-10 z-[100]">
-          <CheckCircle2Icon className="text-green-400" size={20} />
-          <span className="font-bold text-sm">Export erfolgreich!</span>
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-10 duration-500 z-[100]">
+          <CheckCircle2Icon className="text-green-400" size={24} />
+          <span className="font-bold text-sm">Konfiguration erfolgreich exportiert!</span>
         </div>
       )}
     </div>

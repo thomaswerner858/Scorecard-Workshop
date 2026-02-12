@@ -1,6 +1,5 @@
-// App.tsx
-npm install @google/generative-ai
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { ScoringParameter, KOCriterion, ParameterGroup } from './types';
 import ParameterEditor from './components/ParameterEditor';
 import KOCriteriaEditor from './components/KOCriteriaEditor';
@@ -12,10 +11,7 @@ import {
   Loader2Icon,
   AlertTriangleIcon,
   ShieldCheckIcon,
-  FileJsonIcon,
-  KeyIcon,
-  EyeIcon,
-  EyeOffIcon
+  FileJsonIcon
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -28,39 +24,17 @@ const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // API Key States
-  const [apiKey, setApiKey] = useState<string>('');
-  const [showApiKey, setShowApiKey] = useState(false);
-
-  // Key beim ersten Laden aus LocalStorage holen
-  useEffect(() => {
-    const savedKey = localStorage.getItem('bilendo_gemini_key');
-    if (savedKey) setApiKey(savedKey);
-  }, []);
-
-  // Key speichern
-  const handleKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setApiKey(val);
-    localStorage.setItem('bilendo_gemini_key', val);
-  };
-
   const totalGroupWeight = groups.reduce((sum, g) => sum + g.weight, 0);
 
   const triggerAiFeedback = async () => {
-    if (!apiKey) {
-      setError("Bitte geben Sie einen API-Key ein, um die KI-Analyse zu nutzen.");
-      return;
-    }
     if (groups.length === 0) {
       setError("Bitte definieren Sie mindestens eine Gruppe, bevor Sie die KI-Analyse starten.");
       return;
     }
-    
     setLoadingAi(true);
     setError(null);
     try {
-      const feedback = await getSparringFeedback(apiKey, parameters, koCriteria, groups);
+      const feedback = await getSparringFeedback(parameters, koCriteria, groups);
       setAiFeedback(feedback);
     } catch (err: any) {
       setError("Sparring-Analyse fehlgeschlagen.");
@@ -90,53 +64,26 @@ const App: React.FC = () => {
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">B</div>
             <h1 className="text-xl font-black tracking-tight uppercase">Bilendo <span className="text-indigo-600">ScoringStudio</span></h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
+             <div className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider ${totalGroupWeight === 100 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                {totalGroupWeight === 100 ? <CheckCircle2Icon size={14} /> : <AlertTriangleIcon size={14} />}
+                Gewichtung: {totalGroupWeight}%
+             </div>
+             <div className="h-8 w-px bg-slate-200 mx-2 hidden md:block" />
+             <div className="flex gap-2">
                <button 
                  onClick={exportToJson} 
                  className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-xs font-black hover:bg-slate-800 transition flex items-center gap-2 shadow-lg"
+                 title="Als JSON exportieren"
                >
                  <FileJsonIcon size={16} /> <span className="hidden sm:inline">JSON Export</span>
                </button>
+             </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 mt-10">
-        
-        {/* API Key Eingabe-Sektion */}
-        <div className="mb-8 bg-indigo-900 text-white rounded-[2rem] p-6 shadow-xl flex flex-col md:flex-row items-center gap-6 border border-indigo-700">
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="bg-indigo-500/30 p-3 rounded-2xl text-indigo-200">
-              <KeyIcon size={24} />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm uppercase tracking-wider">Gemini API Key</h3>
-              <p className="text-indigo-300 text-[10px]">Wird lokal gespeichert</p>
-            </div>
-          </div>
-          
-          <div className="relative flex-1 w-full">
-            <input 
-              type={showApiKey ? "text" : "password"}
-              value={apiKey}
-              onChange={handleKeyChange}
-              placeholder="Geben Sie Ihren API Key hier ein (AIza...)"
-              className="w-full bg-indigo-950/50 border border-indigo-500/50 rounded-xl px-4 py-3 text-sm text-indigo-100 placeholder:text-indigo-400/50 outline-none focus:ring-2 focus:ring-indigo-400 transition"
-            />
-            <button 
-              onClick={() => setShowApiKey(!showApiKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-400 hover:text-white transition"
-            >
-              {showApiKey ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
-            </button>
-          </div>
-          
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider ${totalGroupWeight === 100 ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}`}>
-            {totalGroupWeight === 100 ? <CheckCircle2Icon size={14} /> : <AlertTriangleIcon size={14} />}
-            Gewichtung: {totalGroupWeight}%
-          </div>
-        </div>
-
         {error && (
           <div className="mb-8 bg-red-50 border-l-4 border-red-500 text-red-700 p-5 rounded-r-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
             <AlertTriangleIcon size={20} className="shrink-0" />
@@ -201,11 +148,11 @@ const App: React.FC = () => {
                     </div>
                     <button 
                       onClick={triggerAiFeedback} 
-                      disabled={loadingAi || groups.length === 0 || !apiKey} 
+                      disabled={loadingAi || groups.length === 0} 
                       className="bg-white text-slate-900 px-8 py-3 rounded-xl text-xs font-black uppercase hover:bg-indigo-50 transition active:scale-95 disabled:opacity-30 flex items-center gap-2"
                     >
                       {loadingAi && <Loader2Icon size={16} className="animate-spin" />}
-                      {!apiKey ? 'Key erforderlich' : (loadingAi ? 'Analyse...' : 'Modell validieren')}
+                      {loadingAi ? 'Analyse...' : 'Modell validieren'}
                     </button>
                   </div>
                   {aiFeedback ? (
@@ -213,9 +160,7 @@ const App: React.FC = () => {
                       {aiFeedback}
                     </div>
                   ) : (
-                    <p className="text-slate-500 text-sm italic text-center py-10">
-                      {!apiKey ? 'Bitte geben Sie oben Ihren API-Key ein, um die Analyse zu starten.' : 'Klicken Sie auf "Modell validieren", um fachliches Feedback zu erhalten.'}
-                    </p>
+                    <p className="text-slate-500 text-sm italic text-center py-10">Klicken Sie auf "Modell validieren", um fachliches Feedback von der KI zu erhalten.</p>
                   )}
                 </div>
               </div>

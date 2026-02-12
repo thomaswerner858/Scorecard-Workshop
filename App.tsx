@@ -145,7 +145,7 @@ const App: React.FC = () => {
                        >
                          <PhoneIcon size={16} className="text-slate-400 group-hover:text-indigo-600" />
                          <div className="flex flex-col">
-                           <span className="text-xs font-bold text-slate-700">Telefonnummer</span>
+                           <span className="text-xs font-bold text-slate-700">API Key</span>
                            <span className="text-[10px] text-slate-400 truncate max-w-[160px]">
                              {phoneNumber || 'Keine Nummer hinterlegt'}
                            </span>

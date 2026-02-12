@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { ScoringParameter, KOCriterion, ParameterGroup } from './types';
 import ParameterEditor from './components/ParameterEditor';
 import KOCriteriaEditor from './components/KOCriteriaEditor';
@@ -11,33 +12,28 @@ import {
   CheckCircle2Icon,
   Loader2Icon,
   AlertTriangleIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  FileSpreadsheetIcon,
+  FileJsonIcon
 } from 'lucide-react';
 
 const App: React.FC = () => {
-  const [groups, setGroups] = useState<ParameterGroup[]>([
-    { id: 'g1', name: 'Finanzen & Bonität', weight: 60 },
-    { id: 'g2', name: 'Stammdaten', weight: 40 }
-  ]);
-  const [parameters, setParameters] = useState<ScoringParameter[]>([
-    { 
-      id: 'p1', groupId: 'g1', name: 'Umsatz (Mio. €)', type: 'numeric', weight: 100,
-      ranges: [
-        { id: 'r1', min: 0, max: 1, points: 20 }, 
-        { id: 'r2', min: 1, max: 10, points: 60 }, 
-        { id: 'r3', min: 10, max: 1000, points: 100 }
-      ]
-    }
-  ]);
+  const [groups, setGroups] = useState<ParameterGroup[]>([]);
+  const [parameters, setParameters] = useState<ScoringParameter[]>([]);
   const [koCriteria, setKOCriteria] = useState<KOCriterion[]>([]);
   const [aiFeedback, setAiFeedback] = useState<string>('');
   const [loadingAi, setLoadingAi] = useState(false);
   const [showExportToast, setShowExportToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const totalGroupWeight = groups.reduce((sum, g) => sum + g.weight, 0);
 
   const triggerAiFeedback = async () => {
+    if (groups.length === 0) {
+      setError("Bitte definieren Sie mindestens eine Gruppe, bevor Sie die KI-Analyse starten.");
+      return;
+    }
     setLoadingAi(true);
     setError(null);
     try {
@@ -50,7 +46,7 @@ const App: React.FC = () => {
     }
   };
 
-  const exportConfiguration = () => {
+  const exportToJson = () => {
     const config = { groups, parameters, koCriteria, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -58,6 +54,119 @@ const App: React.FC = () => {
     a.href = url;
     a.download = `bilendo-scoring-config.json`;
     a.click();
+    setToastMessage('Konfiguration als JSON exportiert');
+    setShowExportToast(true);
+    setTimeout(() => setShowExportToast(false), 3000);
+  };
+
+  const generateExcelFormula = (param: ScoringParameter): string => {
+    if (param.ranges.length === 0) return "-";
+    
+    // Wir nehmen an, der zu prüfende Wert stünde in Zelle X2
+    const cell = "X2"; 
+    
+    if (param.type === 'numeric') {
+      // Sortiere ranges nach min aufsteigend für saubere WENN-Logik
+      const sortedRanges = [...param.ranges].sort((a, b) => (a.min || 0) - (b.min || 0));
+      let formula = "";
+      let closingBrackets = "";
+      
+      sortedRanges.forEach((r, idx) => {
+        if (idx === sortedRanges.length - 1) {
+          formula += `${r.points}`;
+        } else {
+          formula += `WENN(${cell}<=${r.max || 999999};${r.points};`;
+          closingBrackets += ")";
+        }
+      });
+      return "=" + formula + closingBrackets;
+    } else {
+      // Kategoriale WENN-Logik
+      let formula = "";
+      let closingBrackets = "";
+      param.ranges.forEach((r, idx) => {
+        if (idx === param.ranges.length - 1) {
+          formula += `${r.points}`;
+        } else {
+          formula += `WENN(${cell}="${r.label}";${r.points};`;
+          closingBrackets += ")";
+        }
+      });
+      return "=" + formula + closingBrackets;
+    }
+  };
+
+  const exportToExcel = () => {
+    if (groups.length === 0) {
+      setError("Keine Daten für den Excel-Export vorhanden.");
+      return;
+    }
+
+    const scoringRows: any[] = [];
+    groups.forEach(g => {
+      const groupParams = parameters.filter(p => p.groupId === g.id);
+      
+      if (groupParams.length === 0) {
+        scoringRows.push({
+          'Gruppe': g.name,
+          'Gewichtung Gruppe (%)': g.weight,
+          'Parameter': '-',
+          'Typ': '-',
+          'Gewichtung Parameter (%)': '-',
+          'Logik (Zusammenfassung)': 'Keine Parameter definiert',
+          'Excel-Formel (Beispiel für Wert in X2)': '-'
+        });
+      } else {
+        groupParams.forEach(p => {
+          // Erstelle eine textuelle Zusammenfassung der Ranges
+          const logicSummary = p.ranges.map(r => {
+            const rangeDesc = p.type === 'numeric' 
+              ? `${r.min ?? 0}-${r.max ?? '∞'}` 
+              : (r.label || 'N/A');
+            return `[${rangeDesc}: ${r.points} Pkt]`;
+          }).join(" | ");
+
+          scoringRows.push({
+            'Gruppe': g.name,
+            'Gewichtung Gruppe (%)': g.weight,
+            'Parameter': p.name,
+            'Typ': p.type === 'numeric' ? 'Numerisch' : 'Kategorial',
+            'Gewichtung Parameter (%)': p.weight,
+            'Logik (Zusammenfassung)': logicSummary,
+            'Excel-Formel (Beispiel für Wert in X2)': generateExcelFormula(p)
+          });
+        });
+      }
+    });
+
+    const koRows = koCriteria.map(ko => ({
+      'K.O. Bezeichnung': ko.label,
+      'Prüf-Parameter': ko.parameterName,
+      'Bedingung': ko.operator === 'equals' ? 'Gleich' : ko.operator === 'greater' ? 'Größer als' : 'Kleiner als',
+      'Kritischer Wert': ko.value,
+      'Excel-Logik': `=WENN(X2${ko.operator === 'equals' ? '=' : ko.operator === 'greater' ? '>' : '<'}"${ko.value}";"K.O.";"OK")`
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const wsScoring = XLSX.utils.json_to_sheet(scoringRows);
+    
+    // Spaltenbreiten optimieren
+    const wscols = [
+      {wch: 25}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 25}, {wch: 50}, {wch: 60}
+    ];
+    wsScoring['!cols'] = wscols;
+
+    XLSX.utils.book_append_sheet(wb, wsScoring, "Scoring-Modell");
+    
+    if (koRows.length > 0) {
+      const wsKO = XLSX.utils.json_to_sheet(koRows);
+      wsKO['!cols'] = [{wch: 30}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 40}];
+      XLSX.utils.book_append_sheet(wb, wsKO, "K.O. Kriterien");
+    }
+
+    XLSX.writeFile(wb, `Bilendo_Scoring_Kompakt_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    setToastMessage('Kompakter Excel-Export erfolgreich');
     setShowExportToast(true);
     setTimeout(() => setShowExportToast(false), 3000);
   };
@@ -70,14 +179,28 @@ const App: React.FC = () => {
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">B</div>
             <h1 className="text-xl font-black tracking-tight uppercase">Bilendo <span className="text-indigo-600">ScoringStudio</span></h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
              <div className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider ${totalGroupWeight === 100 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                 {totalGroupWeight === 100 ? <CheckCircle2Icon size={14} /> : <AlertTriangleIcon size={14} />}
                 Gewichtung: {totalGroupWeight}%
              </div>
-             <button onClick={exportConfiguration} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-xs font-black hover:bg-slate-800 transition flex items-center gap-2">
-               <DownloadIcon size={16} /> Export
-             </button>
+             <div className="h-8 w-px bg-slate-200 mx-2 hidden md:block" />
+             <div className="flex gap-2">
+               <button 
+                 onClick={exportToJson} 
+                 className="bg-slate-100 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-black hover:bg-slate-200 transition flex items-center gap-2 border border-slate-200"
+                 title="Als JSON exportieren"
+               >
+                 <FileJsonIcon size={16} /> <span className="hidden sm:inline">JSON</span>
+               </button>
+               <button 
+                 onClick={exportToExcel} 
+                 className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-black hover:bg-emerald-700 transition flex items-center gap-2 shadow-lg shadow-emerald-900/10"
+                 title="Als kompakte Excel exportieren"
+               >
+                 <FileSpreadsheetIcon size={16} /> <span className="hidden sm:inline">Excel Export</span>
+               </button>
+             </div>
           </div>
         </div>
       </header>
@@ -108,7 +231,7 @@ const App: React.FC = () => {
                       <span className="text-lg font-black text-indigo-600">{group.weight}%</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {parameters.filter(p => p.groupId === group.id).map(p => (
+                      {parameters.filter(p => p.groupId === group.id).length > 0 ? parameters.filter(p => p.groupId === group.id).map(p => (
                         <div key={p.id} className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                           <div className="flex justify-between mb-4">
                             <span className="font-bold text-slate-700 text-xs">{p.name}</span>
@@ -117,16 +240,21 @@ const App: React.FC = () => {
                           <div className="flex flex-wrap gap-2">
                             {p.ranges.map(r => (
                               <span key={r.id} className="text-[9px] bg-white border px-2 py-1 rounded-md text-slate-500 font-bold">
-                                {p.type === 'numeric' ? `${r.min}-${r.max}` : r.label}: <span className="text-indigo-600">{r.points}P</span>
+                                {p.type === 'numeric' ? `${r.min ?? '?'}-${r.max ?? '?'}` : r.label}: <span className="text-indigo-600">{r.points}P</span>
                               </span>
                             ))}
                           </div>
                         </div>
-                      ))}
+                      )) : (
+                        <p className="text-slate-400 text-[10px] italic col-span-2">Keine Parameter in dieser Gruppe.</p>
+                      )}
                     </div>
                   </div>
                 )) : (
-                  <p className="text-slate-400 text-center py-10 italic">Noch keine Gruppen definiert.</p>
+                  <div className="text-center py-10">
+                    <p className="text-slate-400 italic mb-2">Noch keine Scoring-Struktur vorhanden.</p>
+                    <p className="text-[10px] text-slate-300 uppercase font-black">Legen Sie oben Gruppen und Parameter an.</p>
+                  </div>
                 )}
               </div>
 
@@ -142,15 +270,15 @@ const App: React.FC = () => {
                     </div>
                     <button 
                       onClick={triggerAiFeedback} 
-                      disabled={loadingAi} 
-                      className="bg-white text-slate-900 px-8 py-3 rounded-xl text-xs font-black uppercase hover:bg-indigo-50 transition active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                      disabled={loadingAi || groups.length === 0} 
+                      className="bg-white text-slate-900 px-8 py-3 rounded-xl text-xs font-black uppercase hover:bg-indigo-50 transition active:scale-95 disabled:opacity-30 flex items-center gap-2"
                     >
                       {loadingAi && <Loader2Icon size={16} className="animate-spin" />}
                       {loadingAi ? 'Analyse...' : 'Modell validieren'}
                     </button>
                   </div>
                   {aiFeedback ? (
-                    <div className="bg-slate-800/50 rounded-3xl p-8 border border-white/5 text-slate-300 text-sm leading-relaxed whitespace-pre-line max-h-[500px] overflow-y-auto custom-scrollbar">
+                    <div className="bg-slate-800/50 rounded-3xl p-8 border border-white/5 text-slate-300 text-sm leading-relaxed whitespace-pre-line max-h-[500px] overflow-y-auto custom-scrollbar animate-in fade-in duration-500">
                       {aiFeedback}
                     </div>
                   ) : (
@@ -171,7 +299,7 @@ const App: React.FC = () => {
       {showExportToast && (
         <div className="fixed bottom-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-10 py-5 rounded-3xl shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-12 z-[100] border border-white/10">
           <CheckCircle2Icon className="text-green-400" size={24} />
-          <span className="font-black text-xs uppercase tracking-widest">Konfiguration exportiert</span>
+          <span className="font-black text-xs uppercase tracking-widest">{toastMessage}</span>
         </div>
       )}
     </div>

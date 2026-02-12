@@ -26,7 +26,7 @@ export const getSparringFeedback = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash',
       contents: prompt,
     });
     return response.text || "Feedback derzeit nicht verfügbar.";

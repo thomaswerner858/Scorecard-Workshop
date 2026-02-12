@@ -1,4 +1,5 @@
 // App.tsx
+npm install @google/generative-ai
 import React, { useState, useEffect } from 'react';
 import { ScoringParameter, KOCriterion, ParameterGroup } from './types';
 import ParameterEditor from './components/ParameterEditor';

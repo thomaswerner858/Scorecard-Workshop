@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
 import { ScoringParameter, KOCriterion, ParameterGroup } from './types';
 import ParameterEditor from './components/ParameterEditor';
 import KOCriteriaEditor from './components/KOCriteriaEditor';
@@ -8,12 +7,10 @@ import LiveTester from './components/LiveTester';
 import { getSparringFeedback } from './services/geminiService';
 import { 
   SparklesIcon, 
-  DownloadIcon,
   CheckCircle2Icon,
   Loader2Icon,
   AlertTriangleIcon,
   ShieldCheckIcon,
-  FileSpreadsheetIcon,
   FileJsonIcon
 } from 'lucide-react';
 
@@ -59,118 +56,6 @@ const App: React.FC = () => {
     setTimeout(() => setShowExportToast(false), 3000);
   };
 
-  const generateExcelFormula = (param: ScoringParameter): string => {
-    if (param.ranges.length === 0) return "-";
-    
-    // Wir nehmen an, der zu prüfende Wert stünde in Zelle X2
-    const cell = "X2"; 
-    
-    if (param.type === 'numeric') {
-      // Sortiere ranges nach min aufsteigend für saubere WENN-Logik
-      const sortedRanges = [...param.ranges].sort((a, b) => (a.min || 0) - (b.min || 0));
-      let formula = "";
-      let closingBrackets = "";
-      
-      sortedRanges.forEach((r, idx) => {
-        if (idx === sortedRanges.length - 1) {
-          formula += `${r.points}`;
-        } else {
-          formula += `WENN(${cell}<=${r.max || 999999};${r.points};`;
-          closingBrackets += ")";
-        }
-      });
-      return "=" + formula + closingBrackets;
-    } else {
-      // Kategoriale WENN-Logik
-      let formula = "";
-      let closingBrackets = "";
-      param.ranges.forEach((r, idx) => {
-        if (idx === param.ranges.length - 1) {
-          formula += `${r.points}`;
-        } else {
-          formula += `WENN(${cell}="${r.label}";${r.points};`;
-          closingBrackets += ")";
-        }
-      });
-      return "=" + formula + closingBrackets;
-    }
-  };
-
-  const exportToExcel = () => {
-    if (groups.length === 0) {
-      setError("Keine Daten für den Excel-Export vorhanden.");
-      return;
-    }
-
-    const scoringRows: any[] = [];
-    groups.forEach(g => {
-      const groupParams = parameters.filter(p => p.groupId === g.id);
-      
-      if (groupParams.length === 0) {
-        scoringRows.push({
-          'Gruppe': g.name,
-          'Gewichtung Gruppe (%)': g.weight,
-          'Parameter': '-',
-          'Typ': '-',
-          'Gewichtung Parameter (%)': '-',
-          'Logik (Zusammenfassung)': 'Keine Parameter definiert',
-          'Excel-Formel (Beispiel für Wert in X2)': '-'
-        });
-      } else {
-        groupParams.forEach(p => {
-          // Erstelle eine textuelle Zusammenfassung der Ranges
-          const logicSummary = p.ranges.map(r => {
-            const rangeDesc = p.type === 'numeric' 
-              ? `${r.min ?? 0}-${r.max ?? '∞'}` 
-              : (r.label || 'N/A');
-            return `[${rangeDesc}: ${r.points} Pkt]`;
-          }).join(" | ");
-
-          scoringRows.push({
-            'Gruppe': g.name,
-            'Gewichtung Gruppe (%)': g.weight,
-            'Parameter': p.name,
-            'Typ': p.type === 'numeric' ? 'Numerisch' : 'Kategorial',
-            'Gewichtung Parameter (%)': p.weight,
-            'Logik (Zusammenfassung)': logicSummary,
-            'Excel-Formel (Beispiel für Wert in X2)': generateExcelFormula(p)
-          });
-        });
-      }
-    });
-
-    const koRows = koCriteria.map(ko => ({
-      'K.O. Bezeichnung': ko.label,
-      'Prüf-Parameter': ko.parameterName,
-      'Bedingung': ko.operator === 'equals' ? 'Gleich' : ko.operator === 'greater' ? 'Größer als' : 'Kleiner als',
-      'Kritischer Wert': ko.value,
-      'Excel-Logik': `=WENN(X2${ko.operator === 'equals' ? '=' : ko.operator === 'greater' ? '>' : '<'}"${ko.value}";"K.O.";"OK")`
-    }));
-
-    const wb = XLSX.utils.book_new();
-    const wsScoring = XLSX.utils.json_to_sheet(scoringRows);
-    
-    // Spaltenbreiten optimieren
-    const wscols = [
-      {wch: 25}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 25}, {wch: 50}, {wch: 60}
-    ];
-    wsScoring['!cols'] = wscols;
-
-    XLSX.utils.book_append_sheet(wb, wsScoring, "Scoring-Modell");
-    
-    if (koRows.length > 0) {
-      const wsKO = XLSX.utils.json_to_sheet(koRows);
-      wsKO['!cols'] = [{wch: 30}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 40}];
-      XLSX.utils.book_append_sheet(wb, wsKO, "K.O. Kriterien");
-    }
-
-    XLSX.writeFile(wb, `Bilendo_Scoring_Kompakt_${new Date().toISOString().split('T')[0]}.xlsx`);
-    
-    setToastMessage('Kompakter Excel-Export erfolgreich');
-    setShowExportToast(true);
-    setTimeout(() => setShowExportToast(false), 3000);
-  };
-
   return (
     <div className="min-h-screen pb-20 bg-slate-50 font-sans text-slate-900">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
@@ -188,17 +73,10 @@ const App: React.FC = () => {
              <div className="flex gap-2">
                <button 
                  onClick={exportToJson} 
-                 className="bg-slate-100 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-black hover:bg-slate-200 transition flex items-center gap-2 border border-slate-200"
+                 className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-xs font-black hover:bg-slate-800 transition flex items-center gap-2 shadow-lg"
                  title="Als JSON exportieren"
                >
-                 <FileJsonIcon size={16} /> <span className="hidden sm:inline">JSON</span>
-               </button>
-               <button 
-                 onClick={exportToExcel} 
-                 className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-black hover:bg-emerald-700 transition flex items-center gap-2 shadow-lg shadow-emerald-900/10"
-                 title="Als kompakte Excel exportieren"
-               >
-                 <FileSpreadsheetIcon size={16} /> <span className="hidden sm:inline">Excel Export</span>
+                 <FileJsonIcon size={16} /> <span className="hidden sm:inline">JSON Export</span>
                </button>
              </div>
           </div>

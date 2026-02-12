@@ -2,7 +2,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { ScoringParameter, KOCriterion, ParameterGroup } from "../types";
 
-const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY || window.bilendoRuntimeConfig.phoneNumber });
 
 export const getSparringFeedback = async (
   parameters: ScoringParameter[],

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ScoringParameter, KOCriterion, ParameterGroup } from './types';
 import ParameterEditor from './components/ParameterEditor';
 import KOCriteriaEditor from './components/KOCriteriaEditor';
@@ -11,8 +11,21 @@ import {
   Loader2Icon,
   AlertTriangleIcon,
   ShieldCheckIcon,
-  FileJsonIcon
+  FileJsonIcon,
+  SettingsIcon,
+  PhoneIcon,
+  XIcon,
+  CheckIcon
 } from 'lucide-react';
+
+// Erweiterung des Window-Objekts für die globale Variable
+declare global {
+  interface Window {
+    bilendoRuntimeConfig: {
+      phoneNumber: string;
+    };
+  }
+}
 
 const App: React.FC = () => {
   const [groups, setGroups] = useState<ParameterGroup[]>([]);
@@ -23,6 +36,34 @@ const App: React.FC = () => {
   const [showExportToast, setShowExportToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // Settings State
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPhoneInputOpen, setIsPhoneInputOpen] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  // Globale Variable initialisieren und synchronisieren
+  useEffect(() => {
+    window.bilendoRuntimeConfig = { phoneNumber: '' };
+  }, []);
+
+  useEffect(() => {
+    if (window.bilendoRuntimeConfig) {
+      window.bilendoRuntimeConfig.phoneNumber = phoneNumber;
+    }
+  }, [phoneNumber]);
+
+  // Click outside listener für Settings
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const totalGroupWeight = groups.reduce((sum, g) => sum + g.weight, 0);
 
@@ -44,7 +85,7 @@ const App: React.FC = () => {
   };
 
   const exportToJson = () => {
-    const config = { groups, parameters, koCriteria, exportedAt: new Date().toISOString() };
+    const config = { groups, parameters, koCriteria, phoneNumber, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -64,20 +105,82 @@ const App: React.FC = () => {
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">B</div>
             <h1 className="text-xl font-black tracking-tight uppercase">Bilendo <span className="text-indigo-600">ScoringStudio</span></h1>
           </div>
-          <div className="flex items-center gap-3">
+          
+          <div className="flex items-center gap-4">
              <div className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider ${totalGroupWeight === 100 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                 {totalGroupWeight === 100 ? <CheckCircle2Icon size={14} /> : <AlertTriangleIcon size={14} />}
                 Gewichtung: {totalGroupWeight}%
              </div>
              <div className="h-8 w-px bg-slate-200 mx-2 hidden md:block" />
+             
              <div className="flex gap-2">
                <button 
                  onClick={exportToJson} 
-                 className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-xs font-black hover:bg-slate-800 transition flex items-center gap-2 shadow-lg"
+                 className="bg-slate-100 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-black hover:bg-slate-200 transition flex items-center gap-2 border border-slate-200"
                  title="Als JSON exportieren"
                >
-                 <FileJsonIcon size={16} /> <span className="hidden sm:inline">JSON Export</span>
+                 <FileJsonIcon size={16} /> <span className="hidden sm:inline">JSON</span>
                </button>
+
+               {/* Settings Menu */}
+               <div className="relative" ref={settingsRef}>
+                 <button 
+                   onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                   className={`p-2.5 rounded-xl transition relative border ${isSettingsOpen ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                 >
+                   <SettingsIcon size={20} />
+                   {phoneNumber && <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full border border-white"></span>}
+                 </button>
+
+                 {isSettingsOpen && (
+                   <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[60] animate-in fade-in slide-in-from-top-2">
+                     <div className="px-4 py-2 border-b border-slate-50">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Einstellungen</span>
+                     </div>
+                     
+                     {!isPhoneInputOpen ? (
+                       <button 
+                         onClick={() => setIsPhoneInputOpen(true)}
+                         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition group"
+                       >
+                         <PhoneIcon size={16} className="text-slate-400 group-hover:text-indigo-600" />
+                         <div className="flex flex-col">
+                           <span className="text-xs font-bold text-slate-700">Telefonnummer</span>
+                           <span className="text-[10px] text-slate-400 truncate max-w-[160px]">
+                             {phoneNumber || 'Keine Nummer hinterlegt'}
+                           </span>
+                         </div>
+                       </button>
+                     ) : (
+                       <div className="p-3 animate-in zoom-in-95 duration-200">
+                         <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1 border border-slate-200">
+                           <input 
+                             type="text"
+                             autoFocus
+                             value={phoneNumber}
+                             onChange={(e) => setPhoneNumber(e.target.value)}
+                             placeholder="Nummer eingeben..."
+                             className="flex-1 bg-transparent text-xs p-2 outline-none font-medium"
+                             onKeyDown={(e) => e.key === 'Enter' && setIsPhoneInputOpen(false)}
+                           />
+                           <button 
+                             onClick={() => setIsPhoneInputOpen(false)}
+                             className="p-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+                           >
+                             <CheckIcon size={14} />
+                           </button>
+                         </div>
+                         <button 
+                            onClick={() => setIsPhoneInputOpen(false)}
+                            className="mt-2 text-[9px] font-black uppercase text-slate-400 hover:text-slate-600 px-1"
+                         >
+                            Abbrechen
+                         </button>
+                       </div>
+                     )}
+                   </div>
+                 )}
+               </div>
              </div>
           </div>
         </div>

@@ -143,7 +143,6 @@ const App: React.FC = () => {
                          onClick={() => setIsPhoneInputOpen(true)}
                          className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition group"
                        >
-                         <PhoneIcon size={16} className="text-slate-400 group-hover:text-indigo-600" />
                          <div className="flex flex-col">
                            <span className="text-xs font-bold text-slate-700">API Key</span>
                            <span className="text-[10px] text-slate-400 truncate max-w-[160px]">

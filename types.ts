@@ -3,8 +3,8 @@ export interface ScoreRange {
   id: string;
   min?: number;
   max?: number;
-  label?: string; // For categorical
-  points: number; // 0-100
+  label?: string; 
+  points: number; 
 }
 
 export type ParameterType = 'numeric' | 'categorical';
@@ -14,14 +14,14 @@ export interface ScoringParameter {
   groupId: string;
   name: string;
   type: ParameterType;
-  weight: number; // Percentage within the group
+  weight: number; 
   ranges: ScoreRange[];
 }
 
 export interface ParameterGroup {
   id: string;
   name: string;
-  weight: number; // Percentage of the total score
+  weight: number; 
 }
 
 export interface KOCriterion {
@@ -29,6 +29,27 @@ export interface KOCriterion {
   parameterName: string;
   operator: 'equals' | 'greater' | 'less';
   value: string | number;
+  label: string;
+}
+
+export interface RiskClass {
+  id: string;
+  name: string;
+  minScore: number;
+  maxScore: number;
+  color: string;
+}
+
+export type LogicAction = 'add' | 'subtract' | 'multiply';
+export type LogicOperator = 'equals' | 'greater' | 'less';
+
+export interface LogicRule {
+  id: string;
+  parameterId: string;
+  operator: LogicOperator;
+  conditionValue: string | number;
+  action: LogicAction;
+  actionValue: number;
   label: string;
 }
 
@@ -40,7 +61,9 @@ export interface ScoringResult {
   totalScore: number;
   isKO: boolean;
   koReason?: string;
-  activeGroups: string[]; // IDs of groups that had data
+  activeGroups: string[];
+  appliedRules: string[];
+  riskClass?: RiskClass;
   groupContributions: {
     groupId: string;
     name: string;
@@ -53,6 +76,6 @@ export interface ScoringResult {
     name: string;
     value: number | string;
     points: number;
-    contribution: number; // Contribution to the group score
+    contribution: number;
   }[];
 }

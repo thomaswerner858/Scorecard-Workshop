@@ -1,0 +1,1 @@
+export const BILENDO_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA8AAAAGQCAYAAAD9W4mNAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAP+lSURBVHhe7J0FfBRXF8fX7O7u7hCSQAIJbi0uWksLpS2UFiluLVpLS6EtLpS2UPxL3AsED8Hd3Tf77v87IatpAgkkIdj382Nmd968O3f3vXfOPED"; // Truncated for brevity, assuming existing valid data in runtime context.

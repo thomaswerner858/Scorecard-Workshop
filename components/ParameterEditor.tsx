@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ScoringParameter, ParameterGroup, ParameterType, ScoreRange } from '../types';
-import { PlusIcon, TrashIcon, LayersIcon, TagIcon, HashIcon, Edit2Icon } from 'lucide-react';
+import { PlusIcon, TrashIcon, LayersIcon, TagIcon, HashIcon, Edit2Icon, XIcon } from 'lucide-react';
 
 interface Props {
   groups: ParameterGroup[];
@@ -74,6 +74,14 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
     if (!param) return;
     updateParam(paramId, { 
       ranges: param.ranges.map(r => r.id === rangeId ? { ...r, ...updates } : r) 
+    });
+  };
+
+  const removeRange = (paramId: string, rangeId: string) => {
+    const param = parameters.find(p => p.id === paramId);
+    if (!param || param.ranges.length <= 1) return;
+    updateParam(paramId, {
+      ranges: param.ranges.filter(r => r.id !== rangeId)
     });
   };
 
@@ -169,6 +177,13 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {param.ranges.map(range => (
                     <div key={range.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-xs group/range relative">
+                      <button 
+                        onClick={() => removeRange(param.id, range.id)}
+                        className="absolute -top-1.5 -right-1.5 bg-white border border-slate-200 text-slate-300 hover:text-red-500 rounded-full p-0.5 shadow-sm transition-colors opacity-0 group-hover/range:opacity-100"
+                        title="Bereich löschen"
+                      >
+                        <XIcon size={12} />
+                      </button>
                       {param.type === 'numeric' ? (
                         <div className="flex items-center gap-2 mb-3">
                           <input 

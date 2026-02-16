@@ -3,9 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { ScoringParameter, KOCriterion, ParameterGroup } from "../types";
 
 const getAIClient = () => {
-  // Try to get API key from environment first, then from the global runtime config (entered by user)
-  const apiKey = process.env.API_KEY || (window.bilendoRuntimeConfig && window.bilendoRuntimeConfig.phoneNumber);
-  return new GoogleGenAI({ apiKey: apiKey || ""});
+  // Always use process.env.API_KEY as per the rules
+  return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
 };
 
 export const getSparringFeedback = async (
@@ -36,6 +35,6 @@ export const getSparringFeedback = async (
     return response.text || "Feedback derzeit nicht verfügbar.";
   } catch (error) {
     console.error("Sparring Error:", error);
-    return "Fehler beim Laden des Feedbacks. Bitte prüfen Sie Ihre API-Konfiguration (Telefonnummer/Key).";
+    return "Fehler beim Laden des Feedbacks. Bitte stellen Sie sicher, dass ein gültiger API_KEY konfiguriert ist.";
   }
 };

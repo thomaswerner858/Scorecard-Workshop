@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import * as XLSX from 'https://esm.sh/xlsx';
+import * as XLSX from 'xlsx';
 import { ScoringParameter, KOCriterion, ParameterGroup, RiskClass, LogicRule } from './types';
 import ParameterEditor from './components/ParameterEditor';
 import KOCriteriaEditor from './components/KOCriteriaEditor';
@@ -20,8 +20,7 @@ import {
   SettingsIcon,
   PhoneIcon,
   CheckIcon,
-  XIcon,
-  UploadIcon
+  XIcon
 } from 'lucide-react';
 
 declare global {
@@ -112,8 +111,6 @@ const App: React.FC = () => {
     reader.onload = (e) => {
       try {
         const content = JSON.parse(e.target?.result as string);
-        
-        // Basic Validation & State Update
         if (content.groups) setGroups(content.groups);
         if (content.parameters) setParameters(content.parameters);
         if (content.koCriteria) setKOCriteria(content.koCriteria);
@@ -129,14 +126,11 @@ const App: React.FC = () => {
       }
     };
     reader.readAsText(file);
-    // Reset input so the same file can be uploaded again if needed
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const exportToExcel = () => {
     const wb = XLSX.utils.book_new();
-    
-    // 1. Scoring Modell Sheet
     const modelData = [];
     groups.forEach(g => {
       const groupParams = parameters.filter(p => p.groupId === g.id);
@@ -158,7 +152,6 @@ const App: React.FC = () => {
     const wsModel = XLSX.utils.json_to_sheet(modelData);
     XLSX.utils.book_append_sheet(wb, wsModel, "Scoring Modell");
 
-    // 2. KO Kriterien Sheet
     if (koCriteria.length > 0) {
       const koData = koCriteria.map(k => ({
         'Ausschlussgrund': k.label,

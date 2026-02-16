@@ -33,7 +33,7 @@ const RiskClassEditor: React.FC<Props> = ({ riskClasses, onUpdate }) => {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-black text-[#0D2B5B] flex items-center gap-3 uppercase tracking-tight">
           <ShieldIcon className="text-[#1D4686]" size={24} /> 
-          3. Risikoklassen Mapping
+          4. Risikoklassen Mapping
         </h2>
         <button 
           onClick={addClass}

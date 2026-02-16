@@ -85,6 +85,17 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
     });
   };
 
+  const handleRangeKeyDown = (e: React.KeyboardEvent, paramId: string, rangeId: string) => {
+    // Überprüfen, ob das Event von einem Input-Element stammt
+    const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement;
+    
+    // Löschen nur, wenn kein Input fokussiert ist ODER wir explizit auf der Karte sind
+    if ((e.key === 'Delete' || e.key === 'Backspace') && !isInput) {
+      e.preventDefault(); // Verhindert "Zurück"-Navigation des Browsers
+      removeRange(paramId, rangeId);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -102,7 +113,6 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
 
       {groups.map((group) => (
         <div key={group.id} className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-left-4">
-          {/* Group Header */}
           <div className="bg-[#F8FAFC] p-5 border-b border-slate-200 flex flex-wrap items-center gap-4">
             <div className="flex-1 flex items-center gap-2 group/title">
               <input 
@@ -131,7 +141,6 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
             </button>
           </div>
 
-          {/* Parameters in Group */}
           <div className="p-6 space-y-6">
             {parameters.filter(p => p.groupId === group.id).map(param => (
               <div key={param.id} className="bg-[#F1F5F9]/30 p-5 rounded-2xl border border-slate-100">
@@ -173,14 +182,27 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
                   </button>
                 </div>
 
-                {/* Values / Ranges */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {param.ranges.map(range => (
-                    <div key={range.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-xs group/range relative">
+                    <div 
+                      key={range.id} 
+                      className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-xs group/range relative transition-all focus:ring-2 focus:ring-[#1D4686] focus:border-[#1D4686] outline-none hover:border-[#1D4686]/40 cursor-pointer"
+                      tabIndex={0}
+                      onKeyDown={(e) => handleRangeKeyDown(e, param.id, range.id)}
+                      onClick={(e) => {
+                        // Fokus setzen, wenn man auf die Karte klickt (aber nicht in ein Input)
+                        if (e.target === e.currentTarget) {
+                          (e.currentTarget as HTMLElement).focus();
+                        }
+                      }}
+                    >
                       <button 
-                        onClick={() => removeRange(param.id, range.id)}
-                        className="absolute -top-1.5 -right-1.5 bg-white border border-slate-200 text-slate-300 hover:text-red-500 rounded-full p-0.5 shadow-sm transition-colors opacity-0 group-hover/range:opacity-100"
-                        title="Bereich löschen"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeRange(param.id, range.id);
+                        }}
+                        className="absolute -top-1.5 -right-1.5 bg-white border border-slate-200 text-slate-300 hover:text-red-500 rounded-full p-0.5 shadow-sm transition-colors opacity-0 group-hover/range:opacity-100 z-10"
+                        title="Bereich löschen (Entf)"
                       >
                         <XIcon size={12} />
                       </button>

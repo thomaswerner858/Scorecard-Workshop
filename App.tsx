@@ -12,7 +12,6 @@ import {
   SparklesIcon, 
   CheckCircle2Icon,
   Loader2Icon,
-  AlertTriangleIcon,
   ShieldCheckIcon,
   FileJsonIcon,
   SettingsIcon,
@@ -121,10 +120,10 @@ const App: React.FC = () => {
              <button 
                onClick={triggerAiFeedback} 
                disabled={loadingAi} 
-               className="flex items-center gap-2 bg-[#E8F0F9] text-[#1D4686] px-4 py-2 rounded-xl text-xs font-black uppercase hover:bg-[#1D4686] hover:text-white transition shadow-sm border border-[#1D4686]/10"
+               title="KI-Sparring starten"
+               className="flex items-center justify-center bg-[#E8F0F9] text-[#1D4686] w-10 h-10 rounded-xl hover:bg-[#1D4686] hover:text-white transition shadow-sm border border-[#1D4686]/10"
              >
-               {loadingAi ? <Loader2Icon size={14} className="animate-spin" /> : <SparklesIcon size={14} />}
-               <span className="hidden lg:inline">KI-Sparring</span>
+               {loadingAi ? <Loader2Icon size={18} className="animate-spin" /> : <SparklesIcon size={18} />}
              </button>
              
              <div className="flex gap-2">
@@ -168,8 +167,8 @@ const App: React.FC = () => {
           <div className="lg:col-span-2 space-y-16">
             <ParameterEditor groups={groups} parameters={parameters} onGroupsUpdate={setGroups} onParamsUpdate={setParameters} />
             <KOCriteriaEditor criteria={koCriteria} onUpdate={setKOCriteria} />
-            <RiskClassEditor riskClasses={riskClasses} onUpdate={setRiskClasses} />
             <LogicRuleEditor rules={logicRules} parameters={parameters} onUpdate={setLogicRules} />
+            <RiskClassEditor riskClasses={riskClasses} onUpdate={setRiskClasses} />
             
             <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-10">
               <h2 className="text-xl font-black text-[#0D2B5B] uppercase flex items-center gap-3">
@@ -223,7 +222,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* KI-Sparring Modal (Weniger präsent als zuvor) */}
+      {/* KI-Sparring Modal */}
       {showAiModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">

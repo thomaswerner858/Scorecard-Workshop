@@ -36,7 +36,7 @@ const LogicRuleEditor: React.FC<Props> = ({ rules, parameters, onUpdate }) => {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-black text-[#0D2B5B] flex items-center gap-3 uppercase tracking-tight">
           <ZapIcon className="text-amber-500" size={24} /> 
-          4. Logik-Boosts & Anpassungen
+          3. Logik-Boosts & Anpassungen
         </h2>
         <button 
           onClick={addRule}

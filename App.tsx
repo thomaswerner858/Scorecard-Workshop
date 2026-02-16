@@ -5,6 +5,7 @@ import ParameterEditor from './components/ParameterEditor';
 import KOCriteriaEditor from './components/KOCriteriaEditor';
 import RiskClassEditor from './components/RiskClassEditor';
 import LogicRuleEditor from './components/LogicRuleEditor';
+import RiskClassEditorComp from './components/RiskClassEditor'; // Renamed to avoid confusion if needed
 import LiveTester from './components/LiveTester';
 import { getSparringFeedback } from './services/geminiService';
 import { BILENDO_LOGO } from './Assets';
@@ -168,7 +169,7 @@ const App: React.FC = () => {
             <ParameterEditor groups={groups} parameters={parameters} onGroupsUpdate={setGroups} onParamsUpdate={setParameters} />
             <KOCriteriaEditor criteria={koCriteria} onUpdate={setKOCriteria} />
             <LogicRuleEditor rules={logicRules} parameters={parameters} onUpdate={setLogicRules} />
-            <RiskClassEditor riskClasses={riskClasses} onUpdate={setRiskClasses} />
+            <RiskClassEditorComp riskClasses={riskClasses} onUpdate={setRiskClasses} />
             
             <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-10">
               <h2 className="text-xl font-black text-[#0D2B5B] uppercase flex items-center gap-3">

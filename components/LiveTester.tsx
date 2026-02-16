@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { ScoringParameter, KOCriterion, ScoringResult, TestData, ParameterGroup, RiskClass, LogicRule } from '../types';
-import { PlayIcon, CheckCircleIcon, XCircleIcon, RefreshCcwIcon, ZapIcon } from 'lucide-react';
+import { PlayIcon, CheckCircleIcon, XCircleIcon, RefreshCcwIcon, ZapIcon, ShieldAlertIcon } from 'lucide-react';
 
 interface Props {
   groups: ParameterGroup[];
@@ -33,8 +33,10 @@ const LiveTester: React.FC<Props> = ({ groups, parameters, koCriteria, riskClass
       } else {
         const nVal = Number(val);
         const nKo = Number(ko.value);
-        if (ko.operator === 'greater') triggered = nVal > nKo;
-        if (ko.operator === 'less') triggered = nVal < nKo;
+        if (!isNaN(nVal) && !isNaN(nKo)) {
+          if (ko.operator === 'greater') triggered = nVal > nKo;
+          if (ko.operator === 'less') triggered = nVal < nKo;
+        }
       }
 
       if (triggered) {
@@ -155,29 +157,56 @@ const LiveTester: React.FC<Props> = ({ groups, parameters, koCriteria, riskClass
         </div>
 
         <div className="space-y-8 max-h-[75vh] overflow-y-auto pr-2 custom-scrollbar">
-          {parameters.map(p => (
-            <div key={p.id} className="space-y-1.5">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{p.name}</label>
-              {p.type === 'numeric' ? (
-                <input 
-                  type="number"
-                  value={String(testValues[p.id] || '')}
-                  onChange={(e) => setTestValues({ ...testValues, [p.id]: e.target.value })}
-                  className="w-full bg-[#0A244D] border border-white/10 rounded-xl p-3 text-sm focus:border-[#4A90E2] outline-none transition font-bold"
-                  placeholder="Wert eingeben..."
-                />
-              ) : (
-                <select 
-                  value={String(testValues[p.id] || '')}
-                  onChange={(e) => setTestValues({ ...testValues, [p.id]: e.target.value })}
-                  className="w-full bg-[#0A244D] border border-white/10 rounded-xl p-3 text-sm focus:border-[#4A90E2] outline-none transition font-bold text-white appearance-none"
-                >
-                  <option value="">-- Wählen --</option>
-                  {p.ranges.map(opt => <option key={opt.id} value={opt.label}>{opt.label}</option>)}
-                </select>
-              )}
+          
+          {/* K.O. Sektion im Simulator */}
+          {koCriteria.length > 0 && (
+            <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-2xl space-y-4">
+               <div className="flex items-center gap-2 mb-2">
+                 <ShieldAlertIcon size={14} className="text-red-400" />
+                 <span className="text-[10px] font-black uppercase tracking-widest text-red-400">K.O. & Stammdaten Check</span>
+               </div>
+               {koCriteria.map(ko => (
+                 <div key={ko.id} className="space-y-1.5">
+                   <label className="block text-[9px] font-bold text-slate-300 uppercase">{ko.label}</label>
+                   <input 
+                     type="text"
+                     value={String(testValues[ko.id] || '')}
+                     onChange={(e) => setTestValues({ ...testValues, [ko.id]: e.target.value })}
+                     className="w-full bg-[#0A244D] border border-red-500/10 rounded-xl p-2.5 text-xs focus:border-red-400 outline-none transition font-bold"
+                     placeholder={`${ko.parameterName} Wert...`}
+                   />
+                 </div>
+               ))}
             </div>
-          ))}
+          )}
+
+          {/* Scoring Parameter Sektion */}
+          <div className="space-y-6">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-2">Scoring Faktoren</span>
+            {parameters.map(p => (
+              <div key={p.id} className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{p.name}</label>
+                {p.type === 'numeric' ? (
+                  <input 
+                    type="number"
+                    value={String(testValues[p.id] || '')}
+                    onChange={(e) => setTestValues({ ...testValues, [p.id]: e.target.value })}
+                    className="w-full bg-[#0A244D] border border-white/10 rounded-xl p-3 text-sm focus:border-[#4A90E2] outline-none transition font-bold"
+                    placeholder="Wert eingeben..."
+                  />
+                ) : (
+                  <select 
+                    value={String(testValues[p.id] || '')}
+                    onChange={(e) => setTestValues({ ...testValues, [p.id]: e.target.value })}
+                    className="w-full bg-[#0A244D] border border-white/10 rounded-xl p-3 text-sm focus:border-[#4A90E2] outline-none transition font-bold text-white appearance-none"
+                  >
+                    <option value="">-- Wählen --</option>
+                    {p.ranges.map(opt => <option key={opt.id} value={opt.label}>{opt.label}</option>)}
+                  </select>
+                )}
+              </div>
+            ))}
+          </div>
 
           <button 
             onClick={calculateScore}

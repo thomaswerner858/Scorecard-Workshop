@@ -5,7 +5,7 @@ import { ScoringParameter, KOCriterion, ParameterGroup } from "../types";
 const getAIClient = () => {
   // Try to get API key from environment first, then from the global runtime config (entered by user)
   const apiKey = process.env.API_KEY || (window.bilendoRuntimeConfig && window.bilendoRuntimeConfig.phoneNumber);
-  return new GoogleGenAI({ apiKey: apiKey || input autoFocus value={phoneNumber} });
+  return new GoogleGenAI({ apiKey: apiKey || "phoneNumber");
 };
 
 export const getSparringFeedback = async (

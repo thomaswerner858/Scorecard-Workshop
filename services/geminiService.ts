@@ -4,7 +4,7 @@ import { ScoringParameter, KOCriterion, ParameterGroup } from "../types";
 
 const getAIClient = () => {
   // Always use process.env.API_KEY as per the rules
-  return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY || window.bilendoRuntimeConfig.phoneNumber });
 };
 
 export const getSparringFeedback = async (

@@ -3,7 +3,7 @@ export const BILENDO_LOGO = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.o
     <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:%231d63d3;stop-opacity:1" />
       <stop offset="100%" style="stop-color:%231d4686;stop-opacity:1" />
-    </linearGradient>
+    </linearGradient> 
     <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:%236eb5ff;stop-opacity:1" />
       <stop offset="100%" style="stop-color:%233a8dff;stop-opacity:1" />

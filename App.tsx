@@ -69,6 +69,7 @@ const App: React.FC = () => {
         setIsSettingsOpen(false);
         setIsPhoneInputOpen(false);
       }
+    
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);

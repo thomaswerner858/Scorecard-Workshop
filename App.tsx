@@ -5,7 +5,6 @@ import ParameterEditor from './components/ParameterEditor';
 import KOCriteriaEditor from './components/KOCriteriaEditor';
 import RiskClassEditor from './components/RiskClassEditor';
 import LogicRuleEditor from './components/LogicRuleEditor';
-import RiskClassEditorComp from './components/RiskClassEditor'; // Renamed to avoid confusion if needed
 import LiveTester from './components/LiveTester';
 import { getSparringFeedback } from './services/geminiService';
 import { BILENDO_LOGO } from './Assets';
@@ -73,13 +72,9 @@ const App: React.FC = () => {
   const totalGroupWeight = groups.reduce((sum, g) => sum + g.weight, 0);
 
   const triggerAiFeedback = async () => {
-    if (groups.length === 0) {
-      setError("Bitte definieren Sie mindestens eine Gruppe.");
-      return;
-    }
+    if (groups.length === 0) return;
     setLoadingAi(true);
     setShowAiModal(true);
-    setError(null);
     try {
       const feedback = await getSparringFeedback(parameters, koCriteria, groups);
       setAiFeedback(feedback);
@@ -106,11 +101,11 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen pb-20 bg-[#F8FAFC] font-sans text-[#0D2B5B]">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <img src={BILENDO_LOGO} alt="Bilendo Logo" className="h-10 w-auto object-contain" />
-            <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
-            <span className="hidden sm:block text-[10px] font-black uppercase tracking-[0.2em] text-[#1D4686]">Scoring Studio</span>
+        <div className="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <img src={BILENDO_LOGO} alt="Bilendo Logo" className="h-14 w-auto object-contain" />
+            <div className="h-10 w-px bg-slate-200 mx-2 hidden lg:block" />
+            <span className="hidden lg:block text-[10px] font-black uppercase tracking-[0.2em] text-[#1D4686] whitespace-nowrap">Scoring Studio</span>
           </div>
           
           <div className="flex items-center gap-3">
@@ -169,7 +164,7 @@ const App: React.FC = () => {
             <ParameterEditor groups={groups} parameters={parameters} onGroupsUpdate={setGroups} onParamsUpdate={setParameters} />
             <KOCriteriaEditor criteria={koCriteria} onUpdate={setKOCriteria} />
             <LogicRuleEditor rules={logicRules} parameters={parameters} onUpdate={setLogicRules} />
-            <RiskClassEditorComp riskClasses={riskClasses} onUpdate={setRiskClasses} />
+            <RiskClassEditor riskClasses={riskClasses} onUpdate={setRiskClasses} />
             
             <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-10">
               <h2 className="text-xl font-black text-[#0D2B5B] uppercase flex items-center gap-3">
@@ -191,7 +186,7 @@ const App: React.FC = () => {
                         <div className="flex flex-wrap gap-2">
                           {p.ranges.map(r => (
                             <span key={r.id} className="text-[9px] bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-500 font-bold">
-                              {p.type === 'numeric' ? `${r.min ?? '0'}-${r.max ?? '∞'}` : r.label}: <span className="text-[#1D4686]">{r.points}P</span>
+                              {p.type === 'numeric' ? `${r.min ?? '−∞'} bis ${r.max ?? '∞'}` : r.label}: <span className="text-[#1D4686]">{r.points}P</span>
                             </span>
                           ))}
                         </div>
@@ -223,9 +218,8 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* KI-Sparring Modal */}
       {showAiModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="bg-[#0D2B5B] p-6 text-white flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -254,13 +248,6 @@ const App: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {showExportToast && (
-        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 bg-[#0D2B5B] text-white px-10 py-5 rounded-3xl shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-12 z-[100] border border-white/10">
-          <CheckCircle2Icon className="text-green-400" size={24} />
-          <span className="font-black text-xs uppercase tracking-widest">{toastMessage}</span>
         </div>
       )}
     </div>

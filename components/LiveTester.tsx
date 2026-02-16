@@ -82,7 +82,8 @@ const LiveTester: React.FC<Props> = ({ groups, parameters, koCriteria, riskClass
           let points = 0;
           if (p.type === 'numeric') {
             const nVal = Number(val);
-            const range = p.ranges.find(r => nVal >= (r.min ?? -Infinity) && nVal < (r.max ?? Infinity));
+            // Handling open-ended ranges (undefined min/max as -/+ Infinity)
+            const range = p.ranges.find(r => nVal >= (r.min ?? -Infinity) && nVal <= (r.max ?? Infinity));
             points = range ? range.points : 0;
           } else {
             const range = p.ranges.find(r => String(r.label).toLowerCase() === String(val).toLowerCase().trim());
@@ -157,8 +158,6 @@ const LiveTester: React.FC<Props> = ({ groups, parameters, koCriteria, riskClass
         </div>
 
         <div className="space-y-8 max-h-[75vh] overflow-y-auto pr-2 custom-scrollbar">
-          
-          {/* K.O. Sektion im Simulator */}
           {koCriteria.length > 0 && (
             <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-2xl space-y-4">
                <div className="flex items-center gap-2 mb-2">
@@ -180,7 +179,6 @@ const LiveTester: React.FC<Props> = ({ groups, parameters, koCriteria, riskClass
             </div>
           )}
 
-          {/* Scoring Parameter Sektion */}
           <div className="space-y-6">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-2">Scoring Faktoren</span>
             {parameters.map(p => (
@@ -221,36 +219,14 @@ const LiveTester: React.FC<Props> = ({ groups, parameters, koCriteria, riskClass
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Ergebnis</span>
                 {result.isKO ? <XCircleIcon className="text-red-500" /> : <CheckCircleIcon className="text-green-500" />}
               </div>
-              
               <div className="text-center mb-8">
                 <div className="text-6xl font-black tracking-tighter mb-2">{result.totalScore.toFixed(0)}</div>
                 <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30">Punkte erreicht</div>
               </div>
-
               {result.riskClass && !result.isKO && (
                 <div className="mb-6 p-4 rounded-2xl text-center border shadow-lg animate-bounce" style={{ borderColor: result.riskClass.color, backgroundColor: `${result.riskClass.color}15` }}>
                   <div className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1" style={{ color: result.riskClass.color }}>Klassifizierung</div>
                   <div className="text-xl font-black uppercase tracking-tighter" style={{ color: result.riskClass.color }}>{result.riskClass.name}</div>
-                </div>
-              )}
-
-              {result.appliedRules.length > 0 && (
-                <div className="space-y-2 mb-6">
-                  <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-amber-400">
-                    <ZapIcon size={12} /> Aktive Boosts/Penalties:
-                  </div>
-                  {result.appliedRules.map((r, i) => (
-                    <div key={i} className="text-[10px] font-bold bg-amber-400/10 text-amber-200 p-2 rounded-lg border border-amber-400/20">
-                      {r}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {result.isKO && (
-                <div className="p-4 bg-red-500/10 rounded-xl text-red-400 text-xs font-bold border border-red-500/20">
-                  <span className="block mb-1 text-[8px] uppercase opacity-50">Abgelehnt durch K.O.:</span>
-                  {result.koReason}
                 </div>
               )}
             </div>

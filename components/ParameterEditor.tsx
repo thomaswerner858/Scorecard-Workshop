@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ScoringParameter, ParameterGroup, ParameterType, ScoreRange } from '../types';
-import { PlusIcon, TrashIcon, LayersIcon, TagIcon, HashIcon, Edit2Icon, XIcon } from 'lucide-react';
+import { PlusIcon, TrashIcon, LayersIcon, TagIcon, HashIcon, Edit2Icon, XIcon, Infinity } from 'lucide-react';
 
 interface Props {
   groups: ParameterGroup[];
@@ -37,7 +37,7 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
       name: 'Neuer Parameter',
       type: 'numeric',
       weight: 0,
-      ranges: [{ id: '1', min: 0, max: 100, points: 50 }]
+      ranges: [{ id: Math.random().toString(36).substr(2, 5), min: 0, max: undefined, points: 50 }]
     };
     onParamsUpdate([...parameters, newParam]);
   };
@@ -52,7 +52,7 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
     const newType: ParameterType = param.type === 'numeric' ? 'categorical' : 'numeric';
     const newRanges: ScoreRange[] = newType === 'categorical' 
       ? [{ id: 'c1', label: 'Werte auswählen', points: 0 }]
-      : [{ id: 'n1', min: 0, max: 100, points: 50 }];
+      : [{ id: 'n1', min: 0, max: undefined, points: 50 }];
     updateParam(id, { type: newType, ranges: newRanges });
   };
 
@@ -64,7 +64,7 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
     const param = parameters.find(p => p.id === paramId);
     if (!param) return;
     const newRange: ScoreRange = param.type === 'numeric' 
-      ? { id: Math.random().toString(36).substr(2, 5), min: 0, max: 100, points: 0 }
+      ? { id: Math.random().toString(36).substr(2, 5), min: 0, max: undefined, points: 0 }
       : { id: Math.random().toString(36).substr(2, 5), label: 'Neuer Wert', points: 0 };
     updateParam(paramId, { ranges: [...param.ranges, newRange] });
   };
@@ -86,12 +86,9 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
   };
 
   const handleRangeKeyDown = (e: React.KeyboardEvent, paramId: string, rangeId: string) => {
-    // Überprüfen, ob das Event von einem Input-Element stammt
     const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement;
-    
-    // Löschen nur, wenn kein Input fokussiert ist ODER wir explizit auf der Karte sind
     if ((e.key === 'Delete' || e.key === 'Backspace') && !isInput) {
-      e.preventDefault(); // Verhindert "Zurück"-Navigation des Browsers
+      e.preventDefault();
       removeRange(paramId, rangeId);
     }
   };
@@ -190,7 +187,6 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
                       tabIndex={0}
                       onKeyDown={(e) => handleRangeKeyDown(e, param.id, range.id)}
                       onClick={(e) => {
-                        // Fokus setzen, wenn man auf die Karte klickt (aber nicht in ein Input)
                         if (e.target === e.currentTarget) {
                           (e.currentTarget as HTMLElement).focus();
                         }
@@ -202,23 +198,28 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
                           removeRange(param.id, range.id);
                         }}
                         className="absolute -top-1.5 -right-1.5 bg-white border border-slate-200 text-slate-300 hover:text-red-500 rounded-full p-0.5 shadow-sm transition-colors opacity-0 group-hover/range:opacity-100 z-10"
-                        title="Bereich löschen (Entf)"
                       >
                         <XIcon size={12} />
                       </button>
                       {param.type === 'numeric' ? (
-                        <div className="flex items-center gap-2 mb-3">
-                          <input 
-                            type="number" value={range.min ?? ''} 
-                            onChange={(e) => updateRange(param.id, range.id, { min: Number(e.target.value) })}
-                            className="w-full p-1.5 border border-slate-100 rounded-lg focus:border-[#1D4686] outline-none text-center bg-slate-50 font-bold" placeholder="Min"
-                          />
+                        <div className="flex items-center gap-2 mb-3 relative">
+                          <div className="relative w-full">
+                            <input 
+                              type="number" value={range.min ?? ''} 
+                              onChange={(e) => updateRange(param.id, range.id, { min: e.target.value === '' ? undefined : Number(e.target.value) })}
+                              className="w-full p-1.5 border border-slate-100 rounded-lg focus:border-[#1D4686] outline-none text-center bg-slate-50 font-bold placeholder-transparent"
+                            />
+                            {range.min === undefined && <span className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-300"><Infinity size={14} /></span>}
+                          </div>
                           <span className="text-slate-300">-</span>
-                          <input 
-                            type="number" value={range.max ?? ''} 
-                            onChange={(e) => updateRange(param.id, range.id, { max: Number(e.target.value) })}
-                            className="w-full p-1.5 border border-slate-100 rounded-lg focus:border-[#1D4686] outline-none text-center bg-slate-50 font-bold" placeholder="Max"
-                          />
+                          <div className="relative w-full">
+                            <input 
+                              type="number" value={range.max ?? ''} 
+                              onChange={(e) => updateRange(param.id, range.id, { max: e.target.value === '' ? undefined : Number(e.target.value) })}
+                              className="w-full p-1.5 border border-slate-100 rounded-lg focus:border-[#1D4686] outline-none text-center bg-slate-50 font-bold placeholder-transparent"
+                            />
+                            {range.max === undefined && <span className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-300"><Infinity size={14} /></span>}
+                          </div>
                         </div>
                       ) : (
                         <div className="mb-3">
@@ -230,7 +231,7 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
                         </div>
                       )}
                       <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Score-Punkte:</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Punkte:</span>
                         <input 
                           type="number" value={range.points} 
                           onChange={(e) => updateRange(param.id, range.id, { points: Number(e.target.value) })}
@@ -258,14 +259,6 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
           </div>
         </div>
       ))}
-
-      {groups.length === 0 && (
-        <div className="text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 shadow-sm animate-in zoom-in-95">
-          <LayersIcon className="mx-auto text-slate-200 mb-6" size={56} />
-          <h3 className="text-lg font-black text-[#0D2B5B] uppercase tracking-tight">Struktur leer</h3>
-          <p className="text-slate-500 max-w-xs mx-auto mt-3 text-sm">Definieren Sie Gruppen wie Finanzdaten oder Compliance, um zu starten.</p>
-        </div>
-      )}
     </div>
   );
 };

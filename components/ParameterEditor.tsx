@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ScoringParameter, ParameterGroup, ParameterType, ScoreRange } from '../types';
 import { PlusIcon, TrashIcon, LayersIcon, TagIcon, HashIcon, Edit2Icon, XIcon, Infinity } from 'lucide-react';
@@ -108,157 +107,165 @@ const ParameterEditor: React.FC<Props> = ({ groups, parameters, onGroupsUpdate, 
         </button>
       </div>
 
-      {groups.map((group) => (
-        <div key={group.id} className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-left-4">
-          <div className="bg-[#F8FAFC] p-5 border-b border-slate-200 flex flex-wrap items-center gap-4">
-            <div className="flex-1 flex items-center gap-2 group/title">
-              <input 
-                type="text"
-                value={group.name}
-                onChange={(e) => updateGroup(group.id, { name: e.target.value })}
-                className="bg-transparent font-black text-[#0D2B5B] outline-none border-b-2 border-transparent hover:border-slate-300 focus:border-[#1D4686] w-full transition-colors py-1 text-sm uppercase tracking-wider"
-                placeholder="Name der Gruppe..."
-              />
-              <Edit2Icon size={14} className="text-slate-300 group-hover/title:text-[#1D4686] shrink-0" />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gewicht</span>
-              <div className="flex items-center bg-white border border-slate-200 rounded-lg px-2 shadow-sm">
+      <div className="space-y-6">
+        {groups.map((group) => (
+          <div key={group.id} className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-left-4">
+            <div className="bg-[#F8FAFC] p-5 border-b border-slate-200 flex flex-wrap items-center gap-4">
+              <div className="flex-1 flex items-center gap-2 group/title">
                 <input 
-                    type="number"
-                    value={group.weight}
-                    onChange={(e) => updateGroup(group.id, { weight: Number(e.target.value) })}
-                    className="w-12 p-1 text-xs outline-none text-center font-black text-[#1D4686]"
+                  type="text"
+                  value={group.name}
+                  onChange={(e) => updateGroup(group.id, { name: e.target.value })}
+                  className="bg-transparent font-black text-[#0D2B5B] outline-none border-b-2 border-transparent hover:border-slate-300 focus:border-[#1D4686] w-full transition-colors py-1 text-sm uppercase tracking-wider"
+                  placeholder="Name der Gruppe..."
                 />
-                <span className="text-[10px] text-slate-400 font-bold">%</span>
+                <Edit2Icon size={14} className="text-slate-300 group-hover/title:text-[#1D4686] shrink-0" />
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gewicht</span>
+                <div className="flex items-center bg-white border border-slate-200 rounded-lg px-2 shadow-sm">
+                  <input 
+                      type="number"
+                      value={group.weight}
+                      onChange={(e) => updateGroup(group.id, { weight: Number(e.target.value) })}
+                      className="w-12 p-1 text-xs outline-none text-center font-black text-[#1D4686]"
+                  />
+                  <span className="text-[10px] text-slate-400 font-bold">%</span>
+                </div>
+              </div>
+              <button onClick={() => removeGroup(group.id)} className="text-slate-300 hover:text-red-500 transition-colors p-2">
+                <TrashIcon size={18} />
+              </button>
             </div>
-            <button onClick={() => removeGroup(group.id)} className="text-slate-300 hover:text-red-500 transition-colors p-2">
-              <TrashIcon size={18} />
-            </button>
-          </div>
 
-          <div className="p-6 space-y-6">
-            {parameters.filter(p => p.groupId === group.id).map(param => (
-              <div key={param.id} className="bg-[#F1F5F9]/30 p-5 rounded-2xl border border-slate-100">
-                <div className="flex flex-wrap items-start gap-4 mb-5">
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Parameter Bezeichnung</label>
-                    <input 
-                      type="text"
-                      value={param.name}
-                      onChange={(e) => updateParam(param.id, { name: e.target.value })}
-                      className="w-full bg-transparent font-bold text-[#0D2B5B] outline-none border-b border-slate-200 focus:border-[#1D4686] transition-colors py-1"
-                    />
-                  </div>
-                  
-                  <div className="w-36">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Daten-Typ</label>
-                    <button 
-                      onClick={() => toggleParamType(param.id)}
-                      className="w-full flex items-center justify-between px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[#1D4686] hover:border-[#1D4686]/40 transition shadow-sm"
-                    >
-                      {param.type === 'numeric' ? <><HashIcon size={14} /> Numerisch</> : <><TagIcon size={14} /> Kategorial</>}
-                    </button>
-                  </div>
-
-                  <div className="w-28">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Gewicht (%)</label>
-                    <div className="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
+            <div className="p-6 space-y-6">
+              {parameters.filter(p => p.groupId === group.id).map(param => (
+                <div key={param.id} className="bg-[#F1F5F9]/30 p-5 rounded-2xl border border-slate-100">
+                  <div className="flex flex-wrap items-start gap-4 mb-5">
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Parameter Bezeichnung</label>
                       <input 
-                        type="number"
-                        value={param.weight}
-                        onChange={(e) => updateParam(param.id, { weight: Number(e.target.value) })}
-                        className="w-full text-xs font-black text-center text-[#1D4686] outline-none"
+                        type="text"
+                        value={param.name}
+                        onChange={(e) => updateParam(param.id, { name: e.target.value })}
+                        className="w-full bg-transparent font-bold text-[#0D2B5B] outline-none border-b border-slate-200 focus:border-[#1D4686] transition-colors py-1"
                       />
                     </div>
-                  </div>
-
-                  <button onClick={() => removeParam(param.id)} className="mt-7 text-slate-300 hover:text-red-400 transition-colors">
-                    <TrashIcon size={16} />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {param.ranges.map(range => (
-                    <div 
-                      key={range.id} 
-                      className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-xs group/range relative transition-all focus:ring-2 focus:ring-[#1D4686] focus:border-[#1D4686] outline-none hover:border-[#1D4686]/40 cursor-pointer"
-                      tabIndex={0}
-                      onKeyDown={(e) => handleRangeKeyDown(e, param.id, range.id)}
-                      onClick={(e) => {
-                        if (e.target === e.currentTarget) {
-                          (e.currentTarget as HTMLElement).focus();
-                        }
-                      }}
-                    >
+                    
+                    <div className="w-36">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Daten-Typ</label>
                       <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeRange(param.id, range.id);
-                        }}
-                        className="absolute -top-1.5 -right-1.5 bg-white border border-slate-200 text-slate-300 hover:text-red-500 rounded-full p-0.5 shadow-sm transition-colors opacity-0 group-hover/range:opacity-100 z-10"
+                        onClick={() => toggleParamType(param.id)}
+                        className="w-full flex items-center justify-between px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[#1D4686] hover:border-[#1D4686]/40 transition shadow-sm"
                       >
-                        <XIcon size={12} />
+                        {param.type === 'numeric' ? <><HashIcon size={14} /> Numerisch</> : <><TagIcon size={14} /> Kategorial</>}
                       </button>
-                      {param.type === 'numeric' ? (
-                        <div className="flex items-center gap-2 mb-3 relative">
-                          <div className="relative w-full">
-                            <input 
-                              type="number" value={range.min ?? ''} 
-                              onChange={(e) => updateRange(param.id, range.id, { min: e.target.value === '' ? undefined : Number(e.target.value) })}
-                              className="w-full p-1.5 border border-slate-100 rounded-lg focus:border-[#1D4686] outline-none text-center bg-slate-50 font-bold placeholder-transparent"
-                            />
-                            {range.min === undefined && <span className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-300"><Infinity size={14} /></span>}
-                          </div>
-                          <span className="text-slate-300">-</span>
-                          <div className="relative w-full">
-                            <input 
-                              type="number" value={range.max ?? ''} 
-                              onChange={(e) => updateRange(param.id, range.id, { max: e.target.value === '' ? undefined : Number(e.target.value) })}
-                              className="w-full p-1.5 border border-slate-100 rounded-lg focus:border-[#1D4686] outline-none text-center bg-slate-50 font-bold placeholder-transparent"
-                            />
-                            {range.max === undefined && <span className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-300"><Infinity size={14} /></span>}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="mb-3">
-                          <input 
-                            type="text" value={range.label ?? ''} 
-                            onChange={(e) => updateRange(param.id, range.id, { label: e.target.value })}
-                            className="w-full p-1.5 border border-slate-100 rounded-lg font-bold text-slate-700 focus:border-[#1D4686] outline-none bg-slate-50" placeholder="z.B. Rating A"
-                          />
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Punkte:</span>
+                    </div>
+
+                    <div className="w-28">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Gewicht (%)</label>
+                      <div className="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
                         <input 
-                          type="number" value={range.points} 
-                          onChange={(e) => updateRange(param.id, range.id, { points: Number(e.target.value) })}
-                          className="w-14 p-1 rounded-lg text-right font-black text-[#1D4686] outline-none"
+                          type="number"
+                          value={param.weight}
+                          onChange={(e) => updateParam(param.id, { weight: Number(e.target.value) })}
+                          className="w-full text-xs font-black text-center text-[#1D4686] outline-none"
                         />
                       </div>
                     </div>
-                  ))}
-                  <button 
-                    onClick={() => addRange(param.id)}
-                    className="border-2 border-dashed border-slate-100 rounded-xl py-4 flex items-center justify-center text-slate-300 hover:border-[#1D4686]/20 hover:text-[#1D4686] transition bg-slate-50/50"
-                  >
-                    <PlusIcon size={20} />
-                  </button>
+
+                    <button onClick={() => removeParam(param.id)} className="mt-7 text-slate-300 hover:text-red-400 transition-colors">
+                      <TrashIcon size={16} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {param.ranges.map(range => (
+                      <div 
+                        key={range.id} 
+                        className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-xs group/range relative transition-all focus:ring-2 focus:ring-[#1D4686] focus:border-[#1D4686] outline-none hover:border-[#1D4686]/40 cursor-pointer"
+                        tabIndex={0}
+                        onKeyDown={(e) => handleRangeKeyDown(e, param.id, range.id)}
+                        onClick={(e) => {
+                          if (e.target === e.currentTarget) {
+                            (e.currentTarget as HTMLElement).focus();
+                          }
+                        }}
+                      >
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeRange(param.id, range.id);
+                          }}
+                          className="absolute -top-1.5 -right-1.5 bg-white border border-slate-200 text-slate-300 hover:text-red-500 rounded-full p-0.5 shadow-sm transition-colors opacity-0 group-hover/range:opacity-100 z-10"
+                        >
+                          <XIcon size={12} />
+                        </button>
+                        {param.type === 'numeric' ? (
+                          <div className="flex items-center gap-2 mb-3 relative">
+                            <div className="relative w-full">
+                              <input 
+                                type="number" value={range.min ?? ''} 
+                                onChange={(e) => updateRange(param.id, range.id, { min: e.target.value === '' ? undefined : Number(e.target.value) })}
+                                className="w-full p-1.5 border border-slate-100 rounded-lg focus:border-[#1D4686] outline-none text-center bg-slate-50 font-bold placeholder-transparent"
+                              />
+                              {range.min === undefined && <span className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-300"><Infinity size={14} /></span>}
+                            </div>
+                            <span className="text-slate-300">-</span>
+                            <div className="relative w-full">
+                              <input 
+                                type="number" value={range.max ?? ''} 
+                                onChange={(e) => updateRange(param.id, range.id, { max: e.target.value === '' ? undefined : Number(e.target.value) })}
+                                className="w-full p-1.5 border border-slate-100 rounded-lg focus:border-[#1D4686] outline-none text-center bg-slate-50 font-bold placeholder-transparent"
+                              />
+                              {range.max === undefined && <span className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-300"><Infinity size={14} /></span>}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mb-3">
+                            <input 
+                              type="text" value={range.label ?? ''} 
+                              onChange={(e) => updateRange(param.id, range.id, { label: e.target.value })}
+                              className="w-full p-1.5 border border-slate-100 rounded-lg font-bold text-slate-700 focus:border-[#1D4686] outline-none bg-slate-50" placeholder="z.B. Rating A"
+                            />
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Punkte:</span>
+                          <input 
+                            type="number" value={range.points} 
+                            onChange={(e) => updateRange(param.id, range.id, { points: Number(e.target.value) })}
+                            className="w-14 p-1 rounded-lg text-right font-black text-[#1D4686] outline-none"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <button 
+                      onClick={() => addRange(param.id)}
+                      className="border-2 border-dashed border-slate-100 rounded-xl py-4 flex items-center justify-center text-slate-300 hover:border-[#1D4686]/20 hover:text-[#1D4686] transition bg-slate-50/50"
+                    >
+                      <PlusIcon size={20} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-            <button 
-              onClick={() => addParameter(group.id)}
-              className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 hover:text-[#1D4686] transition flex items-center justify-center gap-3 group/addp"
-            >
-              <PlusIcon size={16} className="group-hover/addp:rotate-90 transition-transform" /> 
-              Parameter hinzufügen
-            </button>
+              ))}
+              <button 
+                onClick={() => addParameter(group.id)}
+                className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 hover:text-[#1D4686] transition flex items-center justify-center gap-3 group/addp"
+              >
+                <PlusIcon size={16} className="group-hover/addp:rotate-90 transition-transform" /> 
+                Parameter hinzufügen
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+
+        {groups.length === 0 && (
+          <div className="p-8 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-slate-400 text-xs italic">
+            Noch keine Scoring-Gruppen oder Parameter definiert. Starten Sie mit einer neuen Gruppe.
+          </div>
+        )}
+      </div>
     </div>
   );
 };

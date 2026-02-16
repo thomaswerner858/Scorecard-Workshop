@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LogicRule, ScoringParameter } from '../types';
 import { ZapIcon, PlusIcon, TrashIcon, ArrowRightIcon } from 'lucide-react';
@@ -115,6 +114,12 @@ const LogicRuleEditor: React.FC<Props> = ({ rules, parameters, onUpdate }) => {
             </div>
           </div>
         ))}
+
+        {rules.length === 0 && (
+          <div className="p-8 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-slate-400 text-xs italic">
+            Keine Logik-Anpassungen definiert. Nutzen Sie Regeln für dynamische Punkte-Modifikatoren.
+          </div>
+        )}
       </div>
     </div>
   );

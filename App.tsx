@@ -1,23 +1,27 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import * as XLSX from 'https://esm.sh/xlsx';
 import { ScoringParameter, KOCriterion, ParameterGroup, RiskClass, LogicRule } from './types';
 import ParameterEditor from './components/ParameterEditor';
 import KOCriteriaEditor from './components/KOCriteriaEditor';
 import RiskClassEditor from './components/RiskClassEditor';
 import LogicRuleEditor from './components/LogicRuleEditor';
+import RiskClassEditorComp from './components/RiskClassEditor';
 import LiveTester from './components/LiveTester';
 import { getSparringFeedback } from './services/geminiService';
 import { BILENDO_LOGO } from './Assets';
 import { 
   SparklesIcon, 
-  CheckCircle2Icon,
   Loader2Icon,
   ShieldCheckIcon,
   FileJsonIcon,
+  FileSpreadsheetIcon,
+  FileUpIcon,
   SettingsIcon,
   PhoneIcon,
   CheckIcon,
-  XIcon
+  XIcon,
+  UploadIcon
 } from 'lucide-react';
 
 declare global {
@@ -44,7 +48,9 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPhoneInputOpen, setIsPhoneInputOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
+  
   const settingsRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!window.bilendoRuntimeConfig) {
@@ -93,7 +99,79 @@ const App: React.FC = () => {
     a.href = url;
     a.download = `bilendo-scoring-config.json`;
     a.click();
-    setToastMessage('Konfiguration exportiert');
+    setToastMessage('JSON exportiert');
+    setShowExportToast(true);
+    setTimeout(() => setShowExportToast(false), 3000);
+  };
+
+  const importFromJson = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = JSON.parse(e.target?.result as string);
+        
+        // Basic Validation & State Update
+        if (content.groups) setGroups(content.groups);
+        if (content.parameters) setParameters(content.parameters);
+        if (content.koCriteria) setKOCriteria(content.koCriteria);
+        if (content.riskClasses) setRiskClasses(content.riskClasses);
+        if (content.logicRules) setLogicRules(content.logicRules);
+        if (content.phoneNumber) setPhoneNumber(content.phoneNumber);
+
+        setToastMessage('Konfiguration geladen');
+        setShowExportToast(true);
+        setTimeout(() => setShowExportToast(false), 3000);
+      } catch (err) {
+        alert("Fehler beim Import: Ungültiges Dateiformat.");
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so the same file can be uploaded again if needed
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const exportToExcel = () => {
+    const wb = XLSX.utils.book_new();
+    
+    // 1. Scoring Modell Sheet
+    const modelData = [];
+    groups.forEach(g => {
+      const groupParams = parameters.filter(p => p.groupId === g.id);
+      groupParams.forEach(p => {
+        p.ranges.forEach(r => {
+          modelData.push({
+            'Gruppe': g.name,
+            'Gruppen-Gewicht (%)': g.weight,
+            'Parameter': p.name,
+            'Parameter-Gewicht (%)': p.weight,
+            'Typ': p.type === 'numeric' ? 'Numerisch' : 'Kategorial',
+            'Bereich/Label': p.type === 'numeric' ? `${r.min ?? '-∞'} bis ${r.max ?? '∞'}` : r.label,
+            'Punkte': r.points
+          });
+        });
+      });
+    });
+
+    const wsModel = XLSX.utils.json_to_sheet(modelData);
+    XLSX.utils.book_append_sheet(wb, wsModel, "Scoring Modell");
+
+    // 2. KO Kriterien Sheet
+    if (koCriteria.length > 0) {
+      const koData = koCriteria.map(k => ({
+        'Ausschlussgrund': k.label,
+        'Feldname': k.parameterName,
+        'Operator': k.operator,
+        'Wert': k.value
+      }));
+      const wsKO = XLSX.utils.json_to_sheet(koData);
+      XLSX.utils.book_append_sheet(wb, wsKO, "K.O. Kriterien");
+    }
+
+    XLSX.writeFile(wb, `bilendo-scoring-modell.xlsx`);
+    setToastMessage('Excel exportiert');
     setShowExportToast(true);
     setTimeout(() => setShowExportToast(false), 3000);
   };
@@ -123,9 +201,39 @@ const App: React.FC = () => {
              </button>
              
              <div className="flex gap-2">
-               <button onClick={exportToJson} className="bg-white text-slate-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition border border-slate-200 flex items-center gap-2">
-                 <FileJsonIcon size={16} /> <span className="hidden sm:inline">Export</span>
-               </button>
+               <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                 <input 
+                   type="file" 
+                   ref={fileInputRef} 
+                   onChange={importFromJson} 
+                   accept=".json" 
+                   className="hidden" 
+                 />
+                 <button 
+                   onClick={() => fileInputRef.current?.click()} 
+                   title="JSON Import"
+                   className="px-3 py-2 text-[#1D4686] hover:bg-slate-50 border-r border-slate-100 transition flex items-center gap-2"
+                 >
+                   <FileUpIcon size={16} />
+                   <span className="hidden sm:inline text-xs font-bold">Import</span>
+                 </button>
+                 <button 
+                   onClick={exportToJson} 
+                   title="JSON Export"
+                   className="px-3 py-2 text-slate-600 hover:bg-slate-50 border-r border-slate-100 transition flex items-center gap-2"
+                 >
+                   <FileJsonIcon size={16} />
+                   <span className="hidden sm:inline text-xs font-bold">JSON</span>
+                 </button>
+                 <button 
+                   onClick={exportToExcel} 
+                   title="Excel Export"
+                   className="px-3 py-2 text-slate-600 hover:bg-green-50 hover:text-green-700 transition flex items-center gap-2"
+                 >
+                   <FileSpreadsheetIcon size={16} />
+                   <span className="hidden sm:inline text-xs font-bold">Excel</span>
+                 </button>
+               </div>
 
                <div className="relative" ref={settingsRef}>
                  <button onClick={() => setIsSettingsOpen(!isSettingsOpen)} className={`p-2 rounded-xl transition border ${isSettingsOpen ? 'bg-[#E8F0F9] border-[#1D4686]' : 'bg-white border-slate-200'}`}>
@@ -158,13 +266,22 @@ const App: React.FC = () => {
         </div>
       </header>
 
+      {showExportToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4">
+          <div className="bg-[#0D2B5B] text-white px-6 py-3 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-3">
+            <CheckIcon size={18} className="text-green-400" />
+            <span className="text-xs font-black uppercase tracking-widest">{toastMessage}</span>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-7xl mx-auto px-4 mt-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-16">
             <ParameterEditor groups={groups} parameters={parameters} onGroupsUpdate={setGroups} onParamsUpdate={setParameters} />
             <KOCriteriaEditor criteria={koCriteria} onUpdate={setKOCriteria} />
             <LogicRuleEditor rules={logicRules} parameters={parameters} onUpdate={setLogicRules} />
-            <RiskClassEditor riskClasses={riskClasses} onUpdate={setRiskClasses} />
+            <RiskClassEditorComp riskClasses={riskClasses} onUpdate={setRiskClasses} />
             
             <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-10">
               <h2 className="text-xl font-black text-[#0D2B5B] uppercase flex items-center gap-3">
@@ -197,8 +314,8 @@ const App: React.FC = () => {
                   </div>
                 </div>
               )) : (
-                <div className="text-center py-10">
-                  <p className="text-slate-400 italic mb-2">Noch keine Scoring-Struktur vorhanden.</p>
+                <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-slate-400 italic text-xs">Noch keine Scoring-Struktur vorhanden.</p>
                 </div>
               )}
             </div>
